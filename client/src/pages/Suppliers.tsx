@@ -1,0 +1,190 @@
+/**
+ * TraceCore AI — Suppliers Page
+ * Design: Soft-Dark Enterprise
+ */
+
+import { useState } from 'react';
+import { useApp } from '@/contexts/AppContext';
+import { formatDate } from '@/lib/store';
+import { Truck, Plus, Trash2, Mail, Phone, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+
+export default function Suppliers() {
+  const { state, dispatch } = useApp();
+  const [name, setName] = useState('');
+  const [contactInfo, setContactInfo] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('Supplier name is required');
+      return;
+    }
+    setIsSubmitting(true);
+    setTimeout(() => {
+      dispatch({ type: 'ADD_SUPPLIER', payload: { name: name.trim(), contactInfo: contactInfo.trim() } });
+      setName('');
+      setContactInfo('');
+      setIsSubmitting(false);
+      toast.success(`Supplier "${name.trim()}" added successfully`);
+    }, 400);
+  };
+
+  const handleDelete = (id: string, supplierName: string) => {
+    dispatch({ type: 'DELETE_SUPPLIER', payload: id });
+    toast.success(`Supplier "${supplierName}" removed`);
+  };
+
+  return (
+    <div className="p-6 space-y-6 page-enter">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Suppliers</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Manage your raw material suppliers and vendor relationships.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Add Supplier Form */}
+        <div className="lg:col-span-1">
+          <div className="tc-card sticky top-6">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+                <Plus className="w-4 h-4 text-cyan-400" />
+              </div>
+              <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
+                Add Supplier
+              </h2>
+            </div>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Supplier Name *
+                </Label>
+                <Input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Pacific Botanicals"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Contact Details
+                </Label>
+                <Input
+                  value={contactInfo}
+                  onChange={e => setContactInfo(e.target.value)}
+                  placeholder="email@supplier.com · +1 (555) 000-0000"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Supplier'}
+              </Button>
+            </form>
+
+            {/* Stats */}
+            <div className="mt-5 pt-5 border-t border-border grid grid-cols-2 gap-3">
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
+                  {state.suppliers.length}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Suppliers</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
+                  {state.inputs.length}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Total Inputs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Suppliers List */}
+        <div className="lg:col-span-2 space-y-3">
+          {state.suppliers.length === 0 ? (
+            <div className="tc-card text-center py-12">
+              <Truck className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">No suppliers yet. Add your first one!</p>
+            </div>
+          ) : (
+            state.suppliers.map((supplier, i) => {
+              const inputCount = state.inputs.filter(inp => inp.supplierId === supplier.id).length;
+              return (
+                <div
+                  key={supplier.id}
+                  className="tc-card-hover card-enter"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center shrink-0">
+                        <Truck className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
+                          {supplier.name}
+                        </h3>
+                        {supplier.contactInfo && (
+                          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{supplier.contactInfo}</span>
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="tc-badge-info">
+                            <Package className="w-3 h-3" />
+                            {inputCount} input{inputCount !== 1 ? 's' : ''} sourced
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Added {formatDate(supplier.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(supplier.id, supplier.name)}
+                      className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-muted-foreground transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Inputs sourced from this supplier */}
+                  {inputCount > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-xs text-muted-foreground mb-2">Inputs sourced:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {state.inputs
+                          .filter(inp => inp.supplierId === supplier.id)
+                          .map(inp => (
+                            <span
+                              key={inp.id}
+                              className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border"
+                            >
+                              {inp.name}
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
