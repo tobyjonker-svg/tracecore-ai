@@ -40,10 +40,10 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="p-6 space-y-6 page-enter">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Suppliers</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Suppliers</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Manage your raw material suppliers and vendor relationships.
         </p>
@@ -96,13 +96,13 @@ export default function Suppliers() {
             {/* Stats */}
             <div className="mt-5 pt-5 border-t border-border grid grid-cols-2 gap-3">
               <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
+                <p className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
                   {state.suppliers.length}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Suppliers</p>
               </div>
               <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
+                <p className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
                   {state.inputs.length}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Total Inputs</p>

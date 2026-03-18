@@ -69,9 +69,9 @@ export default function Reports() {
   const margin = Math.round(((totalRevenue - totalCost) / totalRevenue) * 100);
 
   return (
-    <div className="p-6 space-y-6 page-enter">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
       <div>
-        <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Reports</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Reports</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Analytics and insights for your manufacturing operations.
         </p>
@@ -89,14 +89,14 @@ export default function Reports() {
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${bg}`}>
               <Icon className={`w-4.5 h-4.5 ${color}`} />
             </div>
-            <p className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">{value}</p>
+            <p className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">{value}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {/* Production Volume */}
         <div className="tc-card">
           <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] mb-1">Production Volume</h3>
@@ -142,7 +142,7 @@ export default function Reports() {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {/* Stock Distribution */}
         <div className="tc-card">
           <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] mb-1">Current Stock Distribution</h3>

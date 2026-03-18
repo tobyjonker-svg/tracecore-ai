@@ -58,25 +58,25 @@ export default function Products() {
   const lowStockCount = state.products.filter(p => p.stockOnHand <= p.lowStockThreshold).length;
 
   return (
-    <div className="p-6 space-y-6 page-enter">
-      <div className="flex items-start justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Products</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Products</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-0.5">
             Finished goods ready for sale. Manage stock levels and thresholds.
           </p>
         </div>
         {lowStockCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-            <span className="text-sm text-red-400 font-medium">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs md:text-sm">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span className="text-red-400 font-medium">
               {lowStockCount} product{lowStockCount > 1 ? 's' : ''} low on stock
             </span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Add Product Form */}
         <div className="lg:col-span-1">
           <div className="tc-card sticky top-6">

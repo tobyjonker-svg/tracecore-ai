@@ -61,7 +61,7 @@ export default function Settings() {
   return (
     <div className="p-6 space-y-6 page-enter max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Settings</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Settings</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Configure your workspace, business type, and team access.
         </p>

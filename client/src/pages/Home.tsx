@@ -147,18 +147,18 @@ export default function Home() {
     .slice(0, 4);
 
   return (
-    <div className="p-6 space-y-6 page-enter">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">
             Good morning, {state.workspace.name} 👋
           </h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">
+          <p className="text-muted-foreground mt-0.5 text-xs md:text-sm">
             Here's what's happening in your operations today.
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-right text-xs md:text-sm">
           <p className="text-xs text-muted-foreground">
             {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
@@ -173,7 +173,7 @@ export default function Home() {
       </div>
 
       {/* ── KPI Cards ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <KpiCard
           label="Total Products"
           value={totalProducts}
@@ -248,8 +248,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Charts Row ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ── Charts Row ─────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
         {/* Production Volume Chart */}
         <div className="tc-card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
@@ -334,7 +334,7 @@ export default function Home() {
       </div>
 
       {/* ── Bottom Row: Activity + Orders ─────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {/* Activity Feed */}
         <div className="tc-card">
           <div className="flex items-center justify-between mb-4">
