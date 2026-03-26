@@ -9,6 +9,8 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { AICommandProvider } from "./contexts/AICommandContext";
 import DashboardLayout from "./components/DashboardLayout";
 
 // Pages
@@ -48,22 +50,26 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <AppProvider>
-          <TooltipProvider>
-            <Toaster
-              theme="dark"
-              position="bottom-right"
-              toastOptions={{
-                style: {
-                  background: 'oklch(0.165 0.009 265)',
-                  border: '1px solid oklch(1 0 0 / 9%)',
-                  color: 'oklch(0.92 0.005 265)',
-                },
-              }}
-            />
-            <Router />
-          </TooltipProvider>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <AICommandProvider>
+              <TooltipProvider>
+                <Toaster
+                  theme="dark"
+                  position="bottom-right"
+                  toastOptions={{
+                    style: {
+                      background: 'oklch(0.165 0.009 265)',
+                      border: '1px solid oklch(1 0 0 / 9%)',
+                      color: 'oklch(0.92 0.005 265)',
+                    },
+                  }}
+                />
+                <Router />
+              </TooltipProvider>
+            </AICommandProvider>
+          </AppProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { CommandCenter } from './CommandCenter';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const { state } = useApp();
 
   const lowStockCount = state.products.filter(
@@ -209,6 +211,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
               </div>
             )}
+            <button
+              onClick={() => setCommandCenterOpen(true)}
+              className="relative p-2 hover:bg-accent rounded-lg transition-colors"
+              title="Open command center (Ctrl+K)"
+            >
+              <Zap className="w-5 h-5 text-primary" />
+            </button>
             <button className="relative p-2 hover:bg-accent rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
               {pendingOrders > 0 && (
@@ -223,6 +232,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Command Center Modal */}
+      <CommandCenter isOpen={commandCenterOpen} onClose={() => setCommandCenterOpen(false)} />
     </div>
   );
 }
