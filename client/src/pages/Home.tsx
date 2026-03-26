@@ -240,11 +240,9 @@ export default function Home() {
             {lowStockProducts.map(p => p.name).join(', ')} —{' '}
             consider scheduling a production run.
           </p>
-          <Link href="/products">
-            <span className="text-xs text-red-400 hover:text-red-300 font-medium underline underline-offset-2 cursor-pointer">
-              View Products
-            </span>
-          </Link>
+          <a href="/products" className="text-xs text-red-400 hover:text-red-300 font-medium underline underline-offset-2 cursor-pointer">
+            View Products
+          </a>
         </div>
       )}
 
@@ -341,11 +339,9 @@ export default function Home() {
             <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
               Inventory Activity
             </h3>
-            <Link href="/inventory">
-              <span className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
-                View all <ChevronRight className="w-3 h-3" />
-              </span>
-            </Link>
+            <a href="/inventory" className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
+              View all <ChevronRight className="w-3 h-3" />
+            </a>
           </div>
           <div className="space-y-3">
             {recentActivity.map(activity => (
@@ -391,11 +387,9 @@ export default function Home() {
             <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
               Recent Orders
             </h3>
-            <Link href="/orders">
-              <span className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
-                View all <ChevronRight className="w-3 h-3" />
-              </span>
-            </Link>
+            <a href="/orders" className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
+              View all <ChevronRight className="w-3 h-3" />
+            </a>
           </div>
           <div className="space-y-3">
             {recentOrders.map(order => {
@@ -462,11 +456,9 @@ export default function Home() {
           <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
             Product Stock Overview
           </h3>
-          <Link href="/products">
-            <span className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
-              Manage <ChevronRight className="w-3 h-3" />
-            </span>
-          </Link>
+          <a href="/products" className="text-xs text-primary hover:text-primary/80 cursor-pointer flex items-center gap-1">
+            Manage <ChevronRight className="w-3 h-3" />
+          </a>
         </div>
         <div className="space-y-3">
           {state.products.map(product => {
