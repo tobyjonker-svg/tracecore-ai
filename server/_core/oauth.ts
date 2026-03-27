@@ -10,6 +10,28 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  // Login endpoint - returns the OAuth portal URL
+  app.get("/api/oauth/login", (req: Request, res: Response) => {
+    try {
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/oauth/callback`;
+      const state = Buffer.from(redirectUri).toString('base64');
+      const oauthPortalUrl = "https://auth.manus.im";
+      const { ENV } = require("./env");
+      const appId = ENV.appId;
+      
+      const url = new URL(`${oauthPortalUrl}/app-auth`);
+      url.searchParams.set("appId", appId);
+      url.searchParams.set("redirectUri", redirectUri);
+      url.searchParams.set("state", state);
+      url.searchParams.set("type", "signIn");
+      
+      res.json({ loginUrl: url.toString() });
+    } catch (error) {
+      console.error("[OAuth] Failed to generate login URL", error);
+      res.status(500).json({ error: "Failed to generate login URL" });
+    }
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
