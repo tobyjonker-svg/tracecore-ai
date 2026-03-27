@@ -17,10 +17,11 @@ interface PaymentConfirmationProps {
 }
 
 const BANK_DETAILS = {
-  accountHolder: 'TraceCore AI (Pty) Ltd',
-  accountNumber: '1234567890',
-  bankName: 'Standard Bank South Africa',
-  branchCode: '051001',
+  accountHolder: 'T Jonker',
+  accountNumber: '63198166035',
+  bankName: 'First National Bank',
+  accountType: 'Savings Account',
+  branchCode: '250155', // FNB branch code
   reference: 'TRACECORE-',
 };
 
@@ -188,6 +189,18 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
                   )}
                 </Button>
               </div>
+            </div>
+
+            {/* Account Type */}
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Account Type
+              </label>
+              <Input
+                value={BANK_DETAILS.accountType}
+                readOnly
+                className="bg-muted/50"
+              />
             </div>
 
             {/* Branch Code */}
