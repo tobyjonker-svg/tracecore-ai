@@ -70,6 +70,15 @@ function Router() {
 }
 
 function App() {
+  // Clear localStorage if this is a new user flow
+  if (typeof window !== 'undefined') {
+    const isNewUser = new URLSearchParams(window.location.search).get('newUser') === 'true';
+    if (isNewUser) {
+      localStorage.removeItem('tracecore-ai-state');
+      localStorage.removeItem('tracecore-ai-onboarded');
+    }
+  }
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
