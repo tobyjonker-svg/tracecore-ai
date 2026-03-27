@@ -9,6 +9,7 @@
 
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime, timeAgo } from '@/lib/store';
+import { useAuth } from '@/_core/hooks/useAuth';
 import {
   Package,
   FlaskConical,
@@ -126,6 +127,10 @@ function KpiCard({
 }
 
 export default function Home() {
+  // The userAuth hooks provides authentication state
+  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const { state } = useApp();
 
   const totalProducts = state.products.length;

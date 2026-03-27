@@ -24,13 +24,16 @@ import InventoryActivity from "./pages/InventoryActivity";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
+import Landing from "./pages/Landing";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
-function Router() {
+function DashboardRouter() {
+  // Dashboard routes (protected by DashboardLayout)
   return (
     <DashboardLayout>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/app" component={Home} />
         <Route path="/suppliers" component={Suppliers} />
         <Route path="/inputs" component={Inputs} />
         <Route path="/products" component={Products} />
@@ -43,6 +46,17 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
+  );
+}
+
+function Router() {
+  // Main router - public pages first, then dashboard
+  return (
+    <Switch>
+      <Route path="/" component={Landing} />
+      <Route path="/pricing" component={Pricing} />
+      <Route component={DashboardRouter} />
+    </Switch>
   );
 }
 
