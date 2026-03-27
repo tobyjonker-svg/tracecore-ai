@@ -258,14 +258,13 @@ const STORAGE_KEY = 'tracecore-ai-state';
 const ONBOARDED_KEY = 'tracecore-ai-onboarded';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE, (initial) => {
+  const [state, dispatch] = useReducer(reducer, EMPTY_STATE, (initial) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return JSON.parse(saved);
-      const hasOnboarded = localStorage.getItem(ONBOARDED_KEY);
-      return hasOnboarded ? initial : EMPTY_STATE;
+      return EMPTY_STATE;
     } catch {
-      return initial;
+      return EMPTY_STATE;
     }
   });
 
