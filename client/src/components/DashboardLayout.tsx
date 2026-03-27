@@ -121,51 +121,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const isActive = location === item.href;
 
             return (
-              <Link key={item.href} href={item.href}>
-                <a
-                  onClick={closeSidebar}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                    isActive
-                      ? 'sidebar-active'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
-                  )}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span className="text-sm font-medium truncate">{item.label}</span>
-                  {item.label === 'Products' && lowStockCount > 0 && (
-                    <span className="ml-auto text-xs font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full shrink-0">
-                      {lowStockCount}
-                    </span>
-                  )}
-                  {item.label === 'Orders' && pendingOrders > 0 && (
-                    <span className="ml-auto text-xs font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full shrink-0">
-                      {pendingOrders}
-                    </span>
-                  )}
-                </a>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeSidebar}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 block',
+                  isActive
+                    ? 'sidebar-active'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
+                )}
+              >
+                <Icon className="w-5 h-5 shrink-0" />
+                <span className="text-sm font-medium truncate">{item.label}</span>
+                {item.label === 'Products' && lowStockCount > 0 && (
+                  <span className="ml-auto text-xs font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full shrink-0">
+                    {lowStockCount}
+                  </span>
+                )}
+                {item.label === 'Orders' && pendingOrders > 0 && (
+                  <span className="ml-auto text-xs font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full shrink-0">
+                    {pendingOrders}
+                  </span>
+                )}
               </Link>
             );
           })}
         </nav>
 
         {/* AI Assistant */}
-        <Link href="/ai-assistant">
-          <a
-            onClick={closeSidebar}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 mx-3 mb-4 rounded-lg transition-all duration-200',
-              location === '/ai-assistant'
-                ? 'sidebar-active'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
-            )}
-          >
-            <Sparkles className="w-5 h-5 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium">AI Assistant</p>
-              <p className="text-xs text-muted-foreground">Operations co-pilot</p>
-            </div>
-          </a>
+        <Link
+          href="/ai-assistant"
+          onClick={closeSidebar}
+          className={cn(
+            'flex items-center gap-3 px-3 py-2.5 mx-3 mb-4 rounded-lg transition-all duration-200 block',
+            location === '/ai-assistant'
+              ? 'sidebar-active'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
+          )}
+        >
+          <Sparkles className="w-5 h-5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium">AI Assistant</p>
+            <p className="text-xs text-muted-foreground">Operations co-pilot</p>
+          </div>
         </Link>
 
         {/* User Profile */}
