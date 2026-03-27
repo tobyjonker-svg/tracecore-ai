@@ -8,7 +8,9 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDate } from '@/lib/store';
-import { Package, Plus, Trash2, Pencil, Check, X, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Package, Plus, Trash2, Pencil, Check, X, AlertTriangle, TrendingUp, HelpCircle } from 'lucide-react';
+import OnboardingTour from '@/components/OnboardingTour';
+import { PRODUCTS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +27,8 @@ export default function Products() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStock, setEditStock] = useState('');
   const [editThreshold, setEditThreshold] = useState('');
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const onboardingState = getOnboardingState();
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +69,15 @@ export default function Products() {
           <p className="text-muted-foreground text-xs md:text-sm mt-0.5">
             Finished goods ready for sale. Manage stock levels and thresholds.
           </p>
+          {!onboardingState.completedSteps.includes('products') && (
+            <button
+              onClick={() => setIsTourOpen(true)}
+              className="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Tour
+            </button>
+          )}
         </div>
         {lowStockCount > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs md:text-sm">
@@ -285,6 +298,14 @@ export default function Products() {
           )}
         </div>
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        steps={PRODUCTS_TOUR_STEPS}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={() => markTourComplete('products')}
+      />
     </div>
   );
 }

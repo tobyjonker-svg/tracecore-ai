@@ -7,9 +7,12 @@
  * - Workflow overview banner
  */
 
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime, timeAgo } from '@/lib/store';
 import { useAuth } from '@/_core/hooks/useAuth';
+import OnboardingTour from '@/components/OnboardingTour';
+import { DASHBOARD_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import {
   Package,
   FlaskConical,
@@ -22,6 +25,7 @@ import {
   Activity,
   Truck,
   ChevronRight,
+  HelpCircle,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -132,6 +136,8 @@ export default function Home() {
   let { user, loading, error, isAuthenticated, logout } = useAuth();
 
   const { state } = useApp();
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const onboardingState = getOnboardingState();
 
   const totalProducts = state.products.length;
   const totalInputs = state.inputs.length;
@@ -162,6 +168,15 @@ export default function Home() {
           <p className="text-muted-foreground mt-0.5 text-xs md:text-sm">
             Here's what's happening in your operations today.
           </p>
+          {!onboardingState.hasCompletedTour && (
+            <button
+              onClick={() => setIsTourOpen(true)}
+              className="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Take a guided tour
+            </button>
+          )}
         </div>
         <div className="text-right text-xs md:text-sm">
           <p className="text-xs text-muted-foreground">
@@ -514,6 +529,14 @@ export default function Home() {
           );
         })}
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        steps={DASHBOARD_TOUR_STEPS}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={() => markTourComplete('dashboard')}
+      />
     </div>
   );
 }

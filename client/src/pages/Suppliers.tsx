@@ -6,7 +6,9 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDate } from '@/lib/store';
-import { Truck, Plus, Trash2, Mail, Phone, Package, Globe, Zap } from 'lucide-react';
+import { Truck, Plus, Trash2, Mail, Phone, Package, Globe, Zap, HelpCircle } from 'lucide-react';
+import OnboardingTour from '@/components/OnboardingTour';
+import { SUPPLIERS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +23,8 @@ export default function Suppliers() {
   const [description, setDescription] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const onboardingState = getOnboardingState();
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,11 +54,22 @@ export default function Suppliers() {
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
       {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Suppliers</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Manage your raw material suppliers and vendor relationships.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Suppliers</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Manage your raw material suppliers and vendor relationships.
+          </p>
+        </div>
+        {!onboardingState.completedSteps.includes('suppliers') && (
+          <button
+            onClick={() => setIsTourOpen(true)}
+            className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Tour
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -281,6 +296,14 @@ export default function Suppliers() {
           )}
         </div>
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        steps={SUPPLIERS_TOUR_STEPS}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={() => markTourComplete('suppliers')}
+      />
     </div>
   );
 }
