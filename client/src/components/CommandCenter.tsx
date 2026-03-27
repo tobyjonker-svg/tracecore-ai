@@ -59,11 +59,30 @@ export function CommandCenter({ isOpen, onClose }: CommandCenterProps) {
   };
 
   const handleVoiceTranscript = (transcript: string) => {
+    console.log('[CommandCenter] handleVoiceTranscript called with:', transcript);
+    
+    if (!transcript.trim()) {
+      console.log('[CommandCenter] Transcript is empty, returning');
+      return;
+    }
+    
+    // Set input immediately
+    console.log('[CommandCenter] Setting input to:', transcript);
     setInput(transcript);
-    // Auto-execute if confidence is high
+    
+    // Parse and auto-execute
     const parsed = parseCommand(transcript);
-    if (parsed.confidence > 0.8) {
-      setTimeout(() => handleExecuteCommand(transcript), 300);
+    console.log('[CommandCenter] Parsed command:', { type: parsed.type, confidence: parsed.confidence });
+    
+    // Auto-execute if confidence is high (>= 0.8) or if it's a recognized command
+    if (parsed.confidence >= 0.8 && parsed.type !== 'UNKNOWN') {
+      console.log('[CommandCenter] Auto-executing voice command...');
+      setTimeout(() => {
+        console.log('[CommandCenter] Executing command:', transcript);
+        handleExecuteCommand(transcript);
+      }, 100);
+    } else if (parsed.type === 'UNKNOWN') {
+      console.log('[CommandCenter] Command not recognized, showing in input for manual review');
     }
   };
 

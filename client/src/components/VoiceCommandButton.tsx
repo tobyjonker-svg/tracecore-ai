@@ -1,10 +1,11 @@
 /**
  * TraceCore AI — Voice Command Button
  * Microphone button for voice command input.
+ * Optimized for mobile Chrome.
  */
 
-import React, { useState } from 'react';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Mic, Loader2 } from 'lucide-react';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useAICommand } from '@/contexts/AICommandContext';
 import { Button } from '@/components/ui/button';
@@ -16,22 +17,44 @@ export interface VoiceCommandButtonProps {
 }
 
 export function VoiceCommandButton({ onTranscript, className }: VoiceCommandButtonProps) {
-  const { isSupported, isListening, transcript, error, startListening, stopListening, resetTranscript } =
+  const { isSupported, isListening, transcript, error, startListening, stopListening, resetTranscript, getTranscript } =
     useSpeechRecognition();
   const { setIsListening } = useAICommand();
+  const callbackRef = useRef(onTranscript);
+
+  // Keep callback ref updated
+  useEffect(() => {
+    callbackRef.current = onTranscript;
+  }, [onTranscript]);
+
+  // Monitor when listening stops and send transcript
+  useEffect(() => {
+    if (!isListening && transcript) {
+      console.log('[VoiceButton] Listening stopped, checking transcript');
+      // Small delay to ensure speech recognition has fully processed
+      const timer = setTimeout(() => {
+        const finalTranscript = getTranscript();
+        console.log('[VoiceButton] Final transcript:', finalTranscript);
+        
+        if (finalTranscript && finalTranscript.trim()) {
+          console.log('[VoiceButton] Sending transcript to callback:', finalTranscript);
+          callbackRef.current(finalTranscript);
+        }
+        
+        resetTranscript();
+      }, 200);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isListening, transcript, getTranscript, resetTranscript]);
 
   const handleClick = () => {
     if (isListening) {
+      console.log('[VoiceButton] Stop clicked');
       stopListening();
       setIsListening(false);
-      // Give the speech recognition a moment to finalize the transcript
-      setTimeout(() => {
-        if (transcript && transcript.trim()) {
-          onTranscript(transcript);
-        }
-        resetTranscript();
-      }, 100);
     } else {
+      console.log('[VoiceButton] Start clicked');
       startListening();
       setIsListening(true);
     }

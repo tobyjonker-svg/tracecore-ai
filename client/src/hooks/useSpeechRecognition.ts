@@ -1,6 +1,7 @@
 /**
  * TraceCore AI — Speech Recognition Hook
  * Browser-based voice command capture using Web Speech API.
+ * Optimized for mobile Chrome compatibility.
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -27,6 +28,7 @@ export interface UseSpeechRecognitionReturn {
   startListening: () => void;
   stopListening: () => void;
   resetTranscript: () => void;
+  getTranscript: () => string;
 }
 
 export function useSpeechRecognition(): UseSpeechRecognitionReturn {
@@ -35,8 +37,10 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   
-  // Keep a ref to the recognition instance so we can abort it properly
+  // Keep refs to track the current state
   const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef<string>('');
+  const onResultCallbackRef = useRef<((transcript: string) => void) | null>(null);
 
   // Check for browser support
   useEffect(() => {
@@ -50,69 +54,106 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
+    try {
+      const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      transcriptRef.current = '';
 
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => {
-      setIsListening(true);
-      setError(null);
-      setTranscript('');
-    };
+      recognition.onstart = () => {
+        console.log('[Speech] Recognition started');
+        setIsListening(true);
+        setError(null);
+        setTranscript('');
+        transcriptRef.current = '';
+      };
 
-    recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-      
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
-        } else {
-          interimTranscript += transcript;
+      recognition.onresult = (event: any) => {
+        console.log('[Speech] onresult fired, results length:', event.results.length);
+        
+        let interimTranscript = '';
+        
+        // Process all results
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          console.log('[Speech] Result', i, ':', transcript, 'isFinal:', event.results[i].isFinal);
+          
+          if (event.results[i].isFinal) {
+            // This is a final result - store it
+            transcriptRef.current += transcript + ' ';
+            console.log('[Speech] Final result stored, total:', transcriptRef.current);
+          } else {
+            // This is interim
+            interimTranscript += transcript;
+          }
         }
-      }
-      
-      // Update transcript with final results first, then interim
-      if (finalTranscript) {
-        setTranscript(prev => (prev ? prev + ' ' : '') + finalTranscript.trim());
-      }
-      if (interimTranscript) {
-        setTranscript(prev => {
-          // Only show interim if we don't have final results
-          if (finalTranscript) return prev;
-          return interimTranscript;
-        });
-      }
-    };
+        
+        // Update display
+        const displayText = (transcriptRef.current + interimTranscript).trim();
+        setTranscript(displayText);
+        console.log('[Speech] Display text:', displayText);
+      };
 
-    recognition.onerror = (event: any) => {
-      setError(`Speech recognition error: ${event.error}`);
+      recognition.onerror = (event: any) => {
+        console.log('[Speech] Error event:', event.error);
+        setError(`Speech recognition error: ${event.error}`);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        console.log('[Speech] onend fired, final transcript:', transcriptRef.current);
+        setIsListening(false);
+        
+        // Call the callback if one was registered
+        if (onResultCallbackRef.current && transcriptRef.current.trim()) {
+          console.log('[Speech] Calling onResultCallback with:', transcriptRef.current);
+          onResultCallbackRef.current(transcriptRef.current.trim());
+          onResultCallbackRef.current = null;
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error('[Speech] Error starting recognition:', err);
+      setError('Failed to start speech recognition');
       setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+    }
   }, [isSupported]);
 
   const stopListening = useCallback(() => {
+    console.log('[Speech] stopListening called');
     if (recognitionRef.current) {
-      recognitionRef.current.abort();
-      recognitionRef.current = null;
-      setIsListening(false);
+      try {
+        recognitionRef.current.stop();
+        // Don't abort - let it finish naturally
+      } catch (err) {
+        console.error('[Speech] Error stopping recognition:', err);
+      }
     }
   }, []);
 
   const resetTranscript = useCallback(() => {
+    console.log('[Speech] resetTranscript called');
     setTranscript('');
+    transcriptRef.current = '';
     setError(null);
+  }, []);
+
+  const getTranscript = useCallback(() => {
+    const result = transcriptRef.current.trim();
+    console.log('[Speech] getTranscript returning:', result);
+    return result;
+  }, []);
+
+  // Expose a way to set the result callback
+  const setResultCallback = useCallback((callback: (transcript: string) => void) => {
+    console.log('[Speech] setResultCallback registered');
+    onResultCallbackRef.current = callback;
   }, []);
 
   return {
@@ -123,5 +164,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     startListening,
     stopListening,
     resetTranscript,
+    getTranscript,
   };
 }
