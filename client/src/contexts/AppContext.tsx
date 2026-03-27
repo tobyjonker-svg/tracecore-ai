@@ -24,6 +24,7 @@ import {
 
 type Action =
   | { type: 'UPDATE_WORKSPACE'; payload: Partial<AppState['workspace']> }
+  | { type: 'UPDATE_AI_CONFIG'; payload: Partial<AppState['workspace']['aiConfig']> }
   | { type: 'ADD_SUPPLIER'; payload: Omit<Supplier, 'id' | 'workspaceId' | 'createdAt'> }
   | { type: 'DELETE_SUPPLIER'; payload: string }
   | { type: 'ADD_INPUT'; payload: Omit<Input, 'id' | 'workspaceId' | 'createdAt'> }
@@ -50,6 +51,23 @@ function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'UPDATE_WORKSPACE': {
       return { ...state, workspace: { ...state.workspace, ...action.payload } };
+    }
+
+    case 'UPDATE_AI_CONFIG': {
+      const payload = action.payload || {};
+      return {
+        ...state,
+        workspace: {
+          ...state.workspace,
+          aiConfig: {
+            voiceEnabled: payload.voiceEnabled ?? state.workspace.aiConfig?.voiceEnabled ?? false,
+            commandsEnabled: payload.commandsEnabled ?? state.workspace.aiConfig?.commandsEnabled ?? false,
+            customPrompt: payload.customPrompt ?? state.workspace.aiConfig?.customPrompt ?? '',
+            selectedCommands: payload.selectedCommands ?? state.workspace.aiConfig?.selectedCommands ?? [],
+            setupCompleted: payload.setupCompleted ?? state.workspace.aiConfig?.setupCompleted ?? false,
+          },
+        },
+      };
     }
 
     case 'ADD_SUPPLIER': {

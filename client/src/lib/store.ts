@@ -23,6 +23,14 @@ export type BusinessType =
   | 'Artisanal Products'
   | 'Other';
 
+export interface AIConfig {
+  voiceEnabled: boolean;
+  commandsEnabled: boolean;
+  customPrompt: string;
+  selectedCommands: string[];
+  setupCompleted: boolean;
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -34,6 +42,8 @@ export interface Workspace {
   enableOrders: boolean;
   enableShipping: boolean;
   enableProductionRuns: boolean;
+  // AI Configuration
+  aiConfig?: AIConfig;
 }
 
 export interface Supplier {
@@ -139,6 +149,13 @@ export const EMPTY_STATE: AppState = {
     enableOrders: true,
     enableShipping: true,
     enableProductionRuns: true,
+    aiConfig: {
+      voiceEnabled: false,
+      commandsEnabled: false,
+      customPrompt: '',
+      selectedCommands: [],
+      setupCompleted: false,
+    },
   },
   suppliers: [],
   inputs: [],

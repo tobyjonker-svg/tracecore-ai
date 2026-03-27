@@ -7,7 +7,8 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
-import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic } from 'lucide-react';
+import AISetupWizard from '@/components/AISetupWizard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,6 +49,7 @@ export interface TeamMember {
 export default function Settings() {
   const { state, dispatch } = useApp();
   const [workspaceName, setWorkspaceName] = useState(state.workspace.name);
+  const [isAIWizardOpen, setIsAIWizardOpen] = useState(false);
   const [businessType, setBusinessType] = useState<BusinessType>(state.workspace.businessType);
   const [customCategory, setCustomCategory] = useState(state.workspace.customCategory ?? '');
   
@@ -226,12 +228,45 @@ export default function Settings() {
       </div>
 
       {/* Workflow Customization */}
+      {/* AI Assistant Setup */}
       <div className="tc-card">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-violet-400" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Mic className="w-4 h-4 text-primary" />
           </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Workflow Features</h2>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">AI Assistant</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">
+          Configure voice commands and custom instructions for your AI assistant.
+        </p>
+        <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20 mb-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {state.workspace.aiConfig?.setupCompleted ? '✓ AI Configured' : 'Setup AI Assistant'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {state.workspace.aiConfig?.setupCompleted
+                ? `Voice: ${state.workspace.aiConfig.voiceEnabled ? 'Enabled' : 'Disabled'} • Commands: ${state.workspace.aiConfig.selectedCommands.length}`
+                : 'Get started with voice commands'}
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={() => setIsAIWizardOpen(true)}
+          className="w-full gap-2 bg-primary hover:bg-primary/90"
+        >
+          <Mic className="w-4 h-4" />
+          {state.workspace.aiConfig?.setupCompleted ? 'Update AI Setup' : 'Setup AI Assistant'}
+        </Button>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="tc-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-red-400" />
+          </div>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Danger Zone</h2>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
           Enable or disable features based on your business model. For example, service-based businesses might not need Orders or Shipping.
@@ -492,6 +527,26 @@ export default function Settings() {
           Reset to Demo Data
         </Button>
       </div>
+
+      {/* AI Setup Wizard Modal */}
+      <AISetupWizard
+        isOpen={isAIWizardOpen}
+        onClose={() => setIsAIWizardOpen(false)}
+        onComplete={(config) => {
+          dispatch({
+            type: 'UPDATE_AI_CONFIG',
+            payload: {
+              voiceEnabled: config.voiceEnabled,
+              commandsEnabled: config.commandsEnabled,
+              customPrompt: config.customPrompt,
+              selectedCommands: config.selectedCommands,
+              setupCompleted: true,
+            },
+          });
+        }}
+        businessType={businessType}
+        businessName={workspaceName}
+      />
     </div>
   );
 }
