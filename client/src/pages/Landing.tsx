@@ -14,19 +14,19 @@ export default function Landing() {
 
   const carouselImages = [
     {
-      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-home-VBZfGKrT7njDcCEgutEiwH.webp',
-      alt: 'Dashboard Home - KPIs and Analytics',
-      title: 'Real-Time Dashboard'
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/t1_95145f99.png',
+      alt: 'Dashboard Home - Real-time Operations Overview',
+      title: 'Operations Dashboard'
     },
     {
-      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-products-naHsq8DZQV7Np9EaTMhCKc.webp',
-      alt: 'Products Management - Inventory Tracking',
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/t2_8f455ff6.png',
+      alt: 'Products Management - Inventory & Stock Control',
       title: 'Product Management'
     },
     {
-      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-orders-gYtmQmhQWjNKFxqseghQMW.webp',
-      alt: 'Orders Management - Order Tracking',
-      title: 'Order Management'
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/t3_ca90b9d9.png',
+      alt: 'Reports & Analytics - Business Intelligence',
+      title: 'Analytics & Reports'
     }
   ];
 

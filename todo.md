@@ -57,3 +57,12 @@
 - ✅ Dashboard preview image added
 - ✅ Nested anchor tag errors fixed
 - ✅ Voice command system optimized for mobile
+
+## Phase 8: Critical Onboarding & Navigation Fixes
+- [x] Upload and replace carousel images with user-provided screenshots (t1, t2, t3)
+- [x] Fix onboarding: ensure clean dashboard loads, then redirects to Settings
+- [x] Add upgrade button to sidebar navigation
+- [x] Add upgrade button to top navigation bar
+- [ ] Test "Get Started Free" flow end-to-end
+- [ ] Verify Settings page loads without demo data
+- [ ] Verify redirect to Settings happens automatically for new clients

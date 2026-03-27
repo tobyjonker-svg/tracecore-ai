@@ -53,7 +53,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!loading && state.workspace.name === 'My Business' && location !== '/settings') {
-      navigate('/settings');
+      const timer = setTimeout(() => {
+        navigate('/settings');
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [loading, state.workspace.name, location, navigate]);
 
@@ -138,6 +141,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
+        {/* Upgrade Section */}
+        <div className="px-3 py-3 border-t border-border">
+          <button
+            onClick={() => {
+              navigate('/pricing');
+              closeSidebar();
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary hover:from-primary/30 hover:to-violet-500/30 transition-colors border border-primary/30"
+          >
+            <Zap className="w-5 h-5 shrink-0" />
+            <span className="truncate">Upgrade Plan</span>
+          </button>
+        </div>
+
         {/* AI Assistant Link */}
         <div className="px-3 py-3 border-t border-border">
           <Link
@@ -170,6 +187,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Spacer */}
           <div className="flex-1" />
+
+          {/* Upgrade Button */}
+          <button
+            onClick={() => navigate('/pricing')}
+            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary hover:from-primary/30 hover:to-violet-500/30 transition-colors border border-primary/30 mr-4"
+          >
+            <Zap className="w-4 h-4" />
+            <span>Upgrade</span>
+          </button>
 
           {/* Header Actions */}
           <div className="flex items-center gap-3">
