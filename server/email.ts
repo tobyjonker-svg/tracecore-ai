@@ -43,7 +43,7 @@ Branch Code: ${data.bankDetails.branchCode}
 
 IMPORTANT: Please use the reference number "${data.reference}" when making your transfer. This helps us match your payment to your account.
 
-Once we receive your payment, your account will be upgraded within 24 hours.
+    Once we receive your payment, your account will be upgraded as soon as payment reflects in our system.
 
 If you have any questions, please reply to this email.
 
@@ -118,7 +118,7 @@ export function generatePaymentEmailHTML(data: PaymentEmailData): string {
       <ol>
         <li>Transfer R${data.amount} to the bank account above</li>
         <li>Use the reference number "${data.reference}" in your transfer</li>
-        <li>Your account will be upgraded within 24 hours of payment</li>
+        <li>Your account will be upgraded as soon as payment reflects in our system</li>
         <li>You'll receive a confirmation email once your upgrade is complete</li>
       </ol>
       

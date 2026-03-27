@@ -353,7 +353,7 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
             </li>
             <li className="flex gap-3">
               <span className="font-bold text-primary">3.</span>
-              <span>Your account will be upgraded within 24 hours of payment confirmation</span>
+              <span>Your account will be upgraded as soon as payment reflects in our system</span>
             </li>
             <li className="flex gap-3">
               <span className="font-bold text-primary">4.</span>
