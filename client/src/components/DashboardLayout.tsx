@@ -7,7 +7,7 @@
  * - Auth gating: redirects unauthenticated users to login
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   LayoutDashboard,
@@ -45,11 +45,17 @@ const NAV_ITEMS = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const { state } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!loading && state.workspace.name === 'My Business' && location !== '/settings') {
+      navigate('/settings');
+    }
+  }, [loading, state.workspace.name, location, navigate]);
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold

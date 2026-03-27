@@ -27,6 +27,18 @@
 - [x] Verify all pages render without errors
 - [x] Check dev server status
 
+## Phase 6: Landing Page & Onboarding Improvements
+- [x] Create dashboard preview carousel (Home, Products, Orders screens)
+- [x] Implement clean onboarding for new clients (empty dashboard)
+- [x] Redirect new clients to Settings page for business setup
+
+## Phase 7: Suppliers Page Enhancements
+- [x] Add description field to suppliers
+- [x] Add email field to suppliers
+- [x] Add contact details field to suppliers
+- [x] Add website field to suppliers
+- [x] Add upgrade section to Suppliers page
+
 ## Additional Features (Future)
 - [ ] Connect Supabase database (replace localStorage)
 - [ ] Deploy to Vercel

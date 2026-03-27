@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDate } from '@/lib/store';
-import { Truck, Plus, Trash2, Mail, Phone, Package } from 'lucide-react';
+import { Truck, Plus, Trash2, Mail, Phone, Package, Globe, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,10 @@ import { toast } from 'sonner';
 export default function Suppliers() {
   const { state, dispatch } = useApp();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [contactDetails, setContactDetails] = useState('');
+  const [website, setWebsite] = useState('');
+  const [description, setDescription] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,8 +30,12 @@ export default function Suppliers() {
     }
     setIsSubmitting(true);
     setTimeout(() => {
-      dispatch({ type: 'ADD_SUPPLIER', payload: { name: name.trim(), contactInfo: contactInfo.trim() } });
+      dispatch({ type: 'ADD_SUPPLIER', payload: { name: name.trim(), contactInfo: contactInfo.trim(), email: email.trim(), contactDetails: contactDetails.trim(), website: website.trim(), description: description.trim() } });
       setName('');
+      setEmail('');
+      setContactDetails('');
+      setWebsite('');
+      setDescription('');
       setContactInfo('');
       setIsSubmitting(false);
       toast.success(`Supplier "${name.trim()}" added successfully`);
@@ -75,7 +83,52 @@ export default function Suppliers() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Description
+                </Label>
+                <Input
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Brief description of supplier"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Email
+                </Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="contact@supplier.com"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
                   Contact Details
+                </Label>
+                <Input
+                  value={contactDetails}
+                  onChange={e => setContactDetails(e.target.value)}
+                  placeholder="Phone, address, etc."
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Website
+                </Label>
+                <Input
+                  value={website}
+                  onChange={e => setWebsite(e.target.value)}
+                  placeholder="https://supplier.com"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Legacy Contact Info
                 </Label>
                 <Input
                   value={contactInfo}
@@ -108,6 +161,26 @@ export default function Suppliers() {
                 <p className="text-xs text-muted-foreground mt-0.5">Total Inputs</p>
               </div>
             </div>
+
+            {/* Upgrade Section */}
+            <div className="mt-5 pt-5 border-t border-border">
+              <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/30">
+                <div className="flex items-start gap-3 mb-3">
+                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">Upgrade for More Suppliers</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Pro plan: unlimited suppliers</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => (window.location.href = '/pricing')}
+                  size="sm"
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  View Plans
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -136,8 +209,31 @@ export default function Suppliers() {
                         <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
                           {supplier.name}
                         </h3>
+                        {supplier.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{supplier.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                          {supplier.email && (
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Mail className="w-3 h-3" />
+                              {supplier.email}
+                            </span>
+                          )}
+                          {supplier.contactDetails && (
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Phone className="w-3 h-3" />
+                              {supplier.contactDetails}
+                            </span>
+                          )}
+                          {supplier.website && (
+                            <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                              <Globe className="w-3 h-3" />
+                              Website
+                            </a>
+                          )}
+                        </div>
                         {supplier.contactInfo && (
-                          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                          <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
                             <Mail className="w-3 h-3 shrink-0" />
                             <span className="truncate">{supplier.contactInfo}</span>
                           </p>

@@ -7,6 +7,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import {
   AppState,
   INITIAL_STATE,
+  EMPTY_STATE,
   Supplier,
   Input,
   Product,
@@ -249,16 +250,25 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const STORAGE_KEY = 'tracecore-ai-state';
+const ONBOARDED_KEY = 'tracecore-ai-onboarded';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, (initial) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : initial;
+      if (saved) return JSON.parse(saved);
+      const hasOnboarded = localStorage.getItem(ONBOARDED_KEY);
+      return hasOnboarded ? initial : EMPTY_STATE;
     } catch {
       return initial;
     }
   });
+
+  useEffect(() => {
+    if (state.workspace.name !== 'My Business') {
+      localStorage.setItem(ONBOARDED_KEY, 'true');
+    }
+  }, [state.workspace.name]);
 
   useEffect(() => {
     try {

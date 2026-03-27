@@ -3,13 +3,35 @@
  * Marketing homepage for SaaS product
  */
 
-import { ArrowRight, Zap, BarChart3, Lock, Smartphone } from 'lucide-react';
+import { ArrowRight, Zap, BarChart3, Lock, Smartphone, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { getLoginUrl } from '@/const';
 
 export default function Landing() {
   const [isLoading, setIsLoading] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const carouselImages = [
+    {
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-home-VBZfGKrT7njDcCEgutEiwH.webp',
+      alt: 'Dashboard Home - KPIs and Analytics',
+      title: 'Real-Time Dashboard'
+    },
+    {
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-products-naHsq8DZQV7Np9EaTMhCKc.webp',
+      alt: 'Products Management - Inventory Tracking',
+      title: 'Product Management'
+    },
+    {
+      src: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/dashboard-preview-orders-gYtmQmhQWjNKFxqseghQMW.webp',
+      alt: 'Orders Management - Order Tracking',
+      title: 'Order Management'
+    }
+  ];
+
+  const nextSlide = () => setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
+  const prevSlide = () => setCarouselIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -84,13 +106,59 @@ export default function Landing() {
             </Button>
           </div>
 
-          {/* Hero Image */}
-          <div className="rounded-lg border border-primary/20 overflow-hidden shadow-2xl">
-            <img
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/tracecore-dashboard-preview-Lb9ohWh7ArCeYJhRMiKmXi.webp"
-              alt="TraceCore AI Dashboard Preview"
-              className="w-full h-auto"
-            />
+          {/* Hero Image Carousel */}
+          <div className="relative">
+            <div className="rounded-lg border border-primary/20 overflow-hidden shadow-2xl bg-muted/30">
+              <div className="relative aspect-video overflow-hidden">
+                <img
+                  src={carouselImages[carouselIndex].src}
+                  alt={carouselImages[carouselIndex].alt}
+                  className="w-full h-full object-cover transition-opacity duration-500"
+                />
+              </div>
+              
+              {/* Carousel Controls */}
+              <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+                <button
+                  onClick={prevSlide}
+                  className="pointer-events-auto p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="pointer-events-auto p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Carousel Indicators */}
+            <div className="flex justify-center gap-2 mt-6">
+              {carouselImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCarouselIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === carouselIndex ? 'bg-primary w-8' : 'bg-muted-foreground/50 hover:bg-muted-foreground'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Slide Titles */}
+            <div className="text-center mt-4">
+              <p className="text-sm font-medium text-muted-foreground">
+                {carouselIndex + 1} / {carouselImages.length}
+              </p>
+              <p className="text-lg font-semibold text-foreground mt-1">
+                {carouselImages[carouselIndex].title}
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -26,6 +26,10 @@ export interface Supplier {
   id: string;
   workspaceId: string;
   name: string;
+  description?: string;
+  email?: string;
+  contactDetails?: string;
+  website?: string;
   contactInfo: string;
   createdAt: string;
 }
@@ -109,6 +113,22 @@ export interface AppState {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const WORKSPACE_ID = 'ws-mycoalchemy';
+
+// Empty state for new clients
+export const EMPTY_STATE: AppState = {
+  workspace: {
+    id: WORKSPACE_ID,
+    name: 'My Business',
+    businessType: 'Other',
+    createdAt: new Date().toISOString(),
+  },
+  suppliers: [],
+  inputs: [],
+  products: [],
+  productionRuns: [],
+  orders: [],
+  inventoryActivity: [],
+};
 
 export const INITIAL_STATE: AppState = {
   workspace: {
