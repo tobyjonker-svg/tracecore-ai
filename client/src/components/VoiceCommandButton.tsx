@@ -24,10 +24,13 @@ export function VoiceCommandButton({ onTranscript, className }: VoiceCommandButt
     if (isListening) {
       stopListening();
       setIsListening(false);
-      if (transcript) {
-        onTranscript(transcript);
-      }
-      resetTranscript();
+      // Give the speech recognition a moment to finalize the transcript
+      setTimeout(() => {
+        if (transcript && transcript.trim()) {
+          onTranscript(transcript);
+        }
+        resetTranscript();
+      }, 100);
     } else {
       startListening();
       setIsListening(true);

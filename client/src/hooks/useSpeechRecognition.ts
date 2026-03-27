@@ -3,7 +3,7 @@
  * Browser-based voice command capture using Web Speech API.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 // Extend Window interface for Web Speech API
 declare global {
@@ -34,6 +34,9 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Keep a ref to the recognition instance so we can abort it properly
+  const recognitionRef = useRef<any>(null);
 
   // Check for browser support
   useEffect(() => {
@@ -49,6 +52,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
 
     recognition.continuous = false;
     recognition.interimResults = true;
@@ -62,16 +66,27 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
+      let finalTranscript = '';
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          setTranscript(prev => (prev ? prev + ' ' : '') + transcript);
+          finalTranscript += transcript + ' ';
         } else {
           interimTranscript += transcript;
         }
       }
+      
+      // Update transcript with final results first, then interim
+      if (finalTranscript) {
+        setTranscript(prev => (prev ? prev + ' ' : '') + finalTranscript.trim());
+      }
       if (interimTranscript) {
-        setTranscript(interimTranscript);
+        setTranscript(prev => {
+          // Only show interim if we don't have final results
+          if (finalTranscript) return prev;
+          return interimTranscript;
+        });
       }
     };
 
@@ -88,10 +103,9 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, [isSupported]);
 
   const stopListening = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.abort();
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
       setIsListening(false);
     }
   }, []);
