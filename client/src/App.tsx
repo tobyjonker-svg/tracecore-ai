@@ -5,7 +5,7 @@
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
@@ -26,6 +26,7 @@ import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
+import PaymentConfirmation from "./pages/PaymentConfirmation";
 import NotFound from "./pages/NotFound";
 
 function DashboardRouter() {
@@ -34,6 +35,7 @@ function DashboardRouter() {
     <DashboardLayout>
       <Switch>
         <Route path="/app" component={Home} />
+        <Route path="/" component={Home} />
         <Route path="/suppliers" component={Suppliers} />
         <Route path="/inputs" component={Inputs} />
         <Route path="/products" component={Products} />
@@ -49,12 +51,19 @@ function DashboardRouter() {
   );
 }
 
+function PaymentRoute() {
+  const [location] = useLocation();
+  const tier = new URLSearchParams(location.split('?')[1]).get('tier') as 'pro' | 'pro_plus' | null;
+  return tier ? <PaymentConfirmation tier={tier} /> : <NotFound />;
+}
+
 function Router() {
   // Main router - public pages first, then dashboard
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/payment" component={PaymentRoute} />
       <Route component={DashboardRouter} />
     </Switch>
   );

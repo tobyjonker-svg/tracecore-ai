@@ -4,6 +4,7 @@
  * - Mobile: collapsible sidebar with hamburger menu
  * - Desktop: 240px fixed sidebar, top header bar
  * - Responsive breakpoints: sm (640px), md (768px), lg (1024px)
+ * - Auth gating: redirects unauthenticated users to login
  */
 
 import { useState } from 'react';
@@ -24,13 +25,15 @@ import {
   Zap,
   Menu,
   X,
+  Loader2,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/_core/hooks/useAuth';
 import { CommandCenter } from './CommandCenter';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Home', icon: LayoutDashboard },
+  { href: '/app', label: 'Home', icon: LayoutDashboard },
   { href: '/suppliers', label: 'Suppliers', icon: Truck },
   { href: '/inputs', label: 'Inputs', icon: FlaskConical },
   { href: '/products', label: 'Products', icon: Package },
@@ -46,6 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const { state } = useApp();
+  const { user, loading, isAuthenticated } = useAuth({ redirectOnUnauthenticated: true });
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold
@@ -54,6 +58,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pendingOrders = state.orders.filter(o => o.status === 'Pending').length;
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, the useAuth hook will redirect
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -78,39 +99,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-5 py-5 border-b border-border">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/tracecore-logo-mark-QVLR8hoY73SbDxsybutWod.webp"
-                alt="TraceCore AI"
-                className="w-full h-full object-cover"
-              />
+              <div className="w-full h-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-foreground font-['Plus_Jakarta_Sans']">
-                TraceCore AI
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{state.workspace.name}</p>
-            </div>
+            <span className="font-bold text-foreground truncate">TraceCore</span>
           </div>
           <button
             onClick={closeSidebar}
-            className="md:hidden p-1 hover:bg-accent rounded transition-colors"
+            className="md:hidden p-1 hover:bg-muted rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Workspace Badge */}
-        <div className="px-4 py-3">
-          <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50 border border-border hover:bg-accent transition-colors">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                <Zap className="w-3 h-3 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {state.workspace.name}
-              </span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
@@ -118,122 +117,104 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
-            const isActive = location === item.href;
-
+            const isActive = location === item.href || location.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={closeSidebar}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 block',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'sidebar-active'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                <span className="text-sm font-medium truncate">{item.label}</span>
-                {item.label === 'Products' && lowStockCount > 0 && (
-                  <span className="ml-auto text-xs font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full shrink-0">
-                    {lowStockCount}
-                  </span>
-                )}
-                {item.label === 'Orders' && pendingOrders > 0 && (
-                  <span className="ml-auto text-xs font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full shrink-0">
-                    {pendingOrders}
-                  </span>
-                )}
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* AI Assistant */}
-        <Link
-          href="/ai-assistant"
-          onClick={closeSidebar}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 mx-3 mb-4 rounded-lg transition-all duration-200 block',
-            location === '/ai-assistant'
-              ? 'sidebar-active'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent/30'
-          )}
-        >
-          <Sparkles className="w-5 h-5 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium">AI Assistant</p>
-            <p className="text-xs text-muted-foreground">Operations co-pilot</p>
-          </div>
-        </Link>
-
-        {/* User Profile */}
-        <div className="px-4 py-3 border-t border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 font-bold text-sm text-primary">
-              MA
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                MycoAlchemy Admin
-              </p>
-              <p className="text-xs text-muted-foreground truncate">admin@mycoalchemy.com</p>
-            </div>
-          </div>
+        {/* AI Assistant Link */}
+        <div className="px-3 py-3 border-t border-border">
+          <Link
+            href="/ai-assistant"
+            onClick={closeSidebar}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              location === '/ai-assistant'
+                ? 'bg-primary/15 text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            <Sparkles className="w-5 h-5 shrink-0" />
+            <span className="truncate">AI Assistant</span>
+          </Link>
         </div>
       </aside>
 
-      {/* ── Main Content Area ───────────────────────────────────── */}
+      {/* ── Main Content ────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div className="hidden sm:block">
-              <h1 className="text-lg md:text-xl font-bold text-foreground">
-                {state.workspace.businessType}
-              </h1>
-            </div>
-          </div>
+        <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border bg-background/50 backdrop-blur-sm shrink-0">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <Menu className="w-5 h-5 text-foreground" />
+          </button>
 
-          {/* Right Side: Notifications + Alerts */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {lowStockCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-                <span className="text-xs md:text-sm font-semibold text-red-400">
-                  {lowStockCount} low stock
-                </span>
-              </div>
-            )}
-            <button
-              onClick={() => setCommandCenterOpen(true)}
-              className="relative p-2 hover:bg-accent rounded-lg transition-colors"
-              title="Open command center (Ctrl+K)"
-            >
-              <Zap className="w-5 h-5 text-primary" />
-            </button>
-            <button className="relative p-2 hover:bg-accent rounded-lg transition-colors">
-              <Bell className="w-5 h-5" />
-              {pendingOrders > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Header Actions */}
+          <div className="flex items-center gap-3">
+            {/* Notifications */}
+            <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              {(lowStockCount > 0 || pendingOrders > 0) && (
+                <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>
+
+            {/* Command Center Button */}
+            <button
+              onClick={() => setCommandCenterOpen(!commandCenterOpen)}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              title="Command Center (Ctrl+K)"
+            >
+              <Zap className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            {/* User Menu */}
+            <div className="flex items-center gap-2 pl-3 border-l border-border">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
+                <span className="text-xs font-bold text-white">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium text-foreground">{user?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground">Admin</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </div>
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
 
       {/* Command Center Modal */}
-      <CommandCenter isOpen={commandCenterOpen} onClose={() => setCommandCenterOpen(false)} />
+      {commandCenterOpen && (
+        <CommandCenter isOpen={commandCenterOpen} onClose={() => setCommandCenterOpen(false)} />
+      )}
     </div>
   );
 }

@@ -70,12 +70,13 @@ export default function Landing() {
             </Button>
           </div>
 
-          {/* Hero Image Placeholder */}
-          <div className="bg-gradient-to-b from-primary/10 to-transparent rounded-lg border border-primary/20 p-8 h-96 flex items-center justify-center">
-            <div className="text-center">
-              <Zap className="w-16 h-16 text-primary/50 mx-auto mb-4" />
-              <p className="text-muted-foreground">Dashboard Preview</p>
-            </div>
+          {/* Hero Image */}
+          <div className="rounded-lg border border-primary/20 overflow-hidden shadow-2xl">
+            <img
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/tracecore-dashboard-preview-Lb9ohWh7ArCeYJhRMiKmXi.webp"
+              alt="TraceCore AI Dashboard Preview"
+              className="w-full h-auto"
+            />
           </div>
         </div>
       </section>

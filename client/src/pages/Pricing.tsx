@@ -1,6 +1,6 @@
 /**
  * TraceCore AI — Pricing & Subscription Page
- * One-time payment setup for tier upgrades
+ * Direct EFT payment setup for tier upgrades
  */
 
 import { useState } from 'react';
@@ -8,26 +8,20 @@ import { Check, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useLocation } from 'wouter';
 import { TIER_CONFIG } from '@shared/tiers';
 import { cn } from '@/lib/utils';
 
 export default function Pricing() {
   const [selectedTier, setSelectedTier] = useState<'free' | 'pro' | 'pro_plus' | null>('free');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [, navigate] = useLocation();
 
   const handleUpgrade = async (tier: 'pro' | 'pro_plus') => {
-
     setIsProcessing(true);
     try {
-      // TODO: Call trpc.billing.initializePayment
-      // For now, show a placeholder
-      toast.success(`Redirecting to payment for ${TIER_CONFIG[tier].name}...`);
-      
-      // Simulate redirect to Paystack
-      setTimeout(() => {
-        toast.info('Payment integration coming soon');
-        setIsProcessing(false);
-      }, 1000);
+      // Redirect to payment confirmation page
+      navigate(`/payment?tier=${tier}`);
     } catch (error) {
       toast.error('Failed to process payment');
       setIsProcessing(false);
@@ -60,220 +54,143 @@ export default function Pricing() {
                 <span className="text-muted-foreground">/month</span>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full mb-6"
-                onClick={() => setSelectedTier('free')}
-              >
-                Get Started
-              </Button>
+              {/* Features */}
+              <ul className="space-y-3 mb-6">
+                {[
+                  '5 Products',
+                  '5 Suppliers',
+                  '5 Raw Materials',
+                  'Core Dashboard',
+                  'Basic Reports',
+                ].map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
 
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    5 Products
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    5 Suppliers
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    5 Clients
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Core Dashboard
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded border border-muted-foreground/30 shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">
-                    No AI Assistant
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded border border-muted-foreground/30 shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">
-                    No Voice Commands
-                  </span>
-                </div>
-              </div>
+              <Button variant="outline" className="w-full" disabled>
+                Current Plan
+              </Button>
             </div>
           </Card>
 
           {/* Pro Tier */}
           <Card className="relative overflow-hidden border-2 border-primary">
-            <div className="absolute top-0 right-0 bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
-              POPULAR
+            <div className="absolute top-0 left-0 right-0 bg-primary/10 px-4 py-2 text-center">
+              <span className="text-xs font-bold text-primary">MOST POPULAR</span>
             </div>
-            <div className="p-6">
+            <div className="p-6 pt-12">
               <h3 className="text-xl font-bold text-foreground mb-2">
                 {TIER_CONFIG.pro.name}
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-foreground">R199</span>
+                <span className="text-4xl font-bold text-foreground">R{TIER_CONFIG.pro.monthlyPrice}</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
 
+              {/* Features */}
+              <ul className="space-y-3 mb-6">
+                {[
+                  'Unlimited Products',
+                  'Unlimited Suppliers',
+                  'Unlimited Raw Materials',
+                  'Advanced Dashboard',
+                  'WooCommerce Integration',
+                  'Priority Email Support',
+                  'Advanced Reports',
+                ].map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
               <Button
-                className="w-full mb-6"
                 onClick={() => handleUpgrade('pro')}
                 disabled={isProcessing}
+                className="w-full gap-2"
               >
-                {isProcessing ? 'Processing...' : 'Upgrade Now'}
+                <Zap className="w-4 h-4" />
+                Upgrade to Pro
               </Button>
-
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Unlimited Products
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Unlimited Suppliers
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Unlimited Clients
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    WooCommerce Integration
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Multiple Payment Methods
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded border border-muted-foreground/30 shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">
-                    No AI Assistant
-                  </span>
-                </div>
-              </div>
             </div>
           </Card>
 
           {/* Pro Plus Tier */}
           <Card className="relative overflow-hidden border border-border">
-            <div className="absolute top-0 right-0 bg-violet-500 px-3 py-1 text-xs font-bold text-white">
-              PREMIUM
-            </div>
             <div className="p-6">
               <h3 className="text-xl font-bold text-foreground mb-2">
                 {TIER_CONFIG.pro_plus.name}
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-foreground">R299</span>
+                <span className="text-4xl font-bold text-foreground">R{TIER_CONFIG.pro_plus.monthlyPrice}</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
 
+              {/* Features */}
+              <ul className="space-y-3 mb-6">
+                {[
+                  'Everything in Pro',
+                  'AI Operations Assistant',
+                  'Voice Commands',
+                  'QuickBooks Integration',
+                  'Xero Integration',
+                  'WordPress Integration',
+                  'Priority Phone Support',
+                  'Custom Integrations',
+                ].map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
               <Button
-                className="w-full mb-6 bg-violet-600 hover:bg-violet-700"
                 onClick={() => handleUpgrade('pro_plus')}
                 disabled={isProcessing}
+                className="w-full gap-2"
               >
-                {isProcessing ? 'Processing...' : 'Upgrade Now'}
+                <Zap className="w-4 h-4" />
+                Upgrade to Pro Plus
               </Button>
-
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Everything in Pro
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    <span className="font-semibold">AI Operations Assistant</span>
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Voice Commands
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    QuickBooks Integration
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Xero Integration
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">
-                    Priority Support
-                  </span>
-                </div>
-              </div>
             </div>
           </Card>
         </div>
 
         {/* FAQ Section */}
-        <div className="bg-card border border-border rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
             Frequently Asked Questions
           </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                Can I upgrade or downgrade anytime?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Yes! You can change your plan at any time. Changes take effect immediately.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                What payment methods do you accept?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                We accept credit cards, debit cards, and EFT transfers via Paystack.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                Is there a free trial?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Yes! Start with our Free plan and upgrade whenever you're ready.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                Do you offer refunds?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                We offer a 7-day money-back guarantee on all paid plans.
-              </p>
-            </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: 'Can I upgrade or downgrade anytime?',
+                a: 'Yes! You can change your plan at any time. Changes take effect immediately.',
+              },
+              {
+                q: 'Do you offer discounts for annual billing?',
+                a: 'Contact us for custom pricing on annual plans. We offer discounts for committed customers.',
+              },
+              {
+                q: 'What payment methods do you accept?',
+                a: 'We accept Direct EFT (bank transfers) for all plans. Paystack card payments coming soon!',
+              },
+              {
+                q: 'Is there a free trial?',
+                a: 'Yes! Start with our Free plan and upgrade whenever you\'re ready. No credit card required.',
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="bg-card border border-border rounded-lg p-4">
+                <h4 className="font-semibold text-foreground mb-2">{item.q}</h4>
+                <p className="text-sm text-muted-foreground">{item.a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
