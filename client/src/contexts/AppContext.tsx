@@ -237,7 +237,7 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'RESET_STATE': {
-      return INITIAL_STATE;
+      return EMPTY_STATE;
     }
 
     default:

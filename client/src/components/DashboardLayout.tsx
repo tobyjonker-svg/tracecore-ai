@@ -48,10 +48,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
 
-  // No longer needed - users go directly to /settings on signup
+  // Check if this is a new user flow
+  useEffect(() => {
+    const isNewUser = new URLSearchParams(window.location.search).get('newUser') === 'true';
+    if (isNewUser) {
+      // Force EMPTY_STATE for new users
+      dispatch({ type: 'RESET_STATE' });
+      // Remove query param from URL
+      window.history.replaceState({}, '', '/app');
+    }
+  }, [dispatch]);
+
+
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold

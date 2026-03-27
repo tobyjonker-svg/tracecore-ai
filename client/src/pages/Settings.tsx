@@ -214,7 +214,7 @@ export default function Settings() {
             </Button>
             {saveSuccess && (
               <Button
-                onClick={() => navigate('/app')}
+                onClick={() => navigate('/app?newUser=true')}
                 className="bg-emerald-600 hover:bg-emerald-700 gap-2"
               >
                 <ChevronRight className="w-4 h-4" />
