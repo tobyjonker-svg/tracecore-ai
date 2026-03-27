@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime } from '@/lib/store';
-import { Factory, Plus, Package, FileText } from 'lucide-react';
+import { Factory, Plus, Package, FileText, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,11 @@ export default function ProductionRuns() {
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDelete = (id: string) => {
+    dispatch({ type: 'DELETE_PRODUCTION_RUN', payload: id });
+    toast.success('Production run deleted');
+  };
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,16 +220,25 @@ export default function ProductionRuns() {
                           <p className="text-xs text-muted-foreground leading-relaxed">{run.notes}</p>
                         </div>
                       )}
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          Current stock:{' '}
-                          <span className="font-mono text-foreground font-medium">
-                            {product?.stockOnHand ?? 0} units
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            Current stock:{' '}
+                            <span className="font-mono text-foreground font-medium">
+                              {product?.stockOnHand ?? 0} units
+                            </span>
                           </span>
-                        </span>
-                        <span className="text-xs font-mono text-muted-foreground">
-                          #{run.id.slice(-6).toUpperCase()}
-                        </span>
+                          <span className="text-xs font-mono text-muted-foreground">
+                            #{run.id.slice(-6).toUpperCase()}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleDelete(run.id)}
+                          className="p-1.5 hover:bg-red-500/10 rounded transition-colors"
+                          title="Delete production run"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
+                        </button>
                       </div>
                     </div>
                   </div>

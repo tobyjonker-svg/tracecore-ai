@@ -33,10 +33,12 @@ type Action =
   | { type: 'UPDATE_PRODUCT'; payload: Partial<Product> & { id: string } }
   | { type: 'DELETE_PRODUCT'; payload: string }
   | { type: 'ADD_PRODUCTION_RUN'; payload: Omit<ProductionRun, 'id' | 'workspaceId' | 'createdAt'> }
+  | { type: 'DELETE_PRODUCTION_RUN'; payload: string }
   | { type: 'ADD_ORDER'; payload: { customerName: string; items: Omit<OrderItem, 'id' | 'orderId'>[] } }
   | { type: 'UPDATE_ORDER_STATUS'; payload: { id: string; status: OrderStatus } }
   | { type: 'DELETE_ORDER'; payload: string }
   | { type: 'ADD_INVENTORY_ACTIVITY'; payload: Omit<InventoryActivity, 'id' | 'workspaceId' | 'createdAt'> }
+  | { type: 'DELETE_INVENTORY_ACTIVITY'; payload: string }
   | { type: 'RESET_STATE' };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -157,6 +159,10 @@ function reducer(state: AppState, action: Action): AppState {
       };
     }
 
+    case 'DELETE_PRODUCTION_RUN': {
+      return { ...state, productionRuns: state.productionRuns.filter(r => r.id !== action.payload) };
+    }
+
     case 'ADD_ORDER': {
       const orderId = generateId('ord');
       const items: OrderItem[] = action.payload.items.map(item => ({
@@ -234,6 +240,10 @@ function reducer(state: AppState, action: Action): AppState {
         ...action.payload,
       };
       return { ...state, inventoryActivity: [activity, ...state.inventoryActivity] };
+    }
+
+    case 'DELETE_INVENTORY_ACTIVITY': {
+      return { ...state, inventoryActivity: state.inventoryActivity.filter(a => a.id !== action.payload) };
     }
 
     case 'RESET_STATE': {

@@ -10,8 +10,9 @@ import { formatDateTime } from '@/lib/store';
 import { InventoryActionType } from '@/lib/store';
 import {
   Activity, ArrowUpRight, ArrowDownRight, Filter, Package, FlaskConical,
-  Factory, ShoppingCart, Truck, Wrench,
+  Factory, ShoppingCart, Truck, Wrench, Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const ACTION_CONFIG: Record<InventoryActionType, { color: string; bg: string; icon: React.ElementType }> = {
@@ -23,7 +24,7 @@ const ACTION_CONFIG: Record<InventoryActionType, { color: string; bg: string; ic
 };
 
 export default function InventoryActivity() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [filterType, setFilterType] = useState<InventoryActionType | 'All'>('All');
   const [filterItemType, setFilterItemType] = useState<'all' | 'product' | 'input'>('all');
 
@@ -165,14 +166,26 @@ export default function InventoryActivity() {
                             {activity.notes}
                           </p>
                         </div>
-                        <div className="text-right shrink-0">
-                          <span className={cn(
-                            'text-xs font-medium px-2 py-0.5 rounded-full',
-                            cfg.bg, cfg.color
-                          )}>
-                            {activity.actionType}
-                          </span>
-                          <p className="text-xs text-muted-foreground mt-1">
+                        <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              'text-xs font-medium px-2 py-0.5 rounded-full',
+                              cfg.bg, cfg.color
+                            )}>
+                              {activity.actionType}
+                            </span>
+                            <button
+                              onClick={() => {
+                                dispatch({ type: 'DELETE_INVENTORY_ACTIVITY', payload: activity.id });
+                                toast.success('Activity deleted');
+                              }}
+                              className="p-1 hover:bg-red-500/10 rounded transition-colors"
+                              title="Delete activity"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-300" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
                             {formatDateTime(activity.createdAt)}
                           </p>
                         </div>
