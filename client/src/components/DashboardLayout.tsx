@@ -51,14 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { state } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (!loading && state.workspace.name === 'My Business' && location !== '/settings') {
-      const timer = setTimeout(() => {
-        navigate('/settings');
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, state.workspace.name, location, navigate]);
+  // No longer needed - users go directly to /settings on signup
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold
@@ -91,6 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
+      {location !== '/settings' && (
       <aside
         className={cn(
           'fixed md:relative flex flex-col w-60 shrink-0 border-r border-border h-screen transition-transform duration-300 z-40',
@@ -172,6 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
       </aside>
+      )}
 
       {/* ── Main Content ────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 overflow-hidden">

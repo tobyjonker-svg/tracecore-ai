@@ -64,7 +64,7 @@ export default function Landing() {
             </Button>
             <Button
               size="sm"
-              onClick={() => (window.location.href = '/app')}
+              onClick={() => (window.location.href = '/settings')}
             >
               Get Started Free
             </Button>
@@ -92,7 +92,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
               size="lg"
-              onClick={() => (window.location.href = '/app')}
+              onClick={() => (window.location.href = '/settings')}
               className="gap-2"
             >
               Start Free Trial <ArrowRight className="w-4 h-4" />

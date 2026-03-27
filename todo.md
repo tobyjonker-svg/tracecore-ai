@@ -66,3 +66,9 @@
 - [ ] Test "Get Started Free" flow end-to-end
 - [ ] Verify Settings page loads without demo data
 - [ ] Verify redirect to Settings happens automatically for new clients
+
+## Phase 9: Fixed Signup Flow to Settings
+- [x] Changed "Get Started Free" button to redirect to /settings instead of /app
+- [x] Changed "Start Free Trial" button to redirect to /settings instead of /app
+- [x] Hide sidebar when on Settings page for clean setup experience
+- [x] Remove auto-redirect logic from DashboardLayout
