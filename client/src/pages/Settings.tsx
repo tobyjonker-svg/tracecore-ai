@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
-import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -200,6 +200,47 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Subscription / Upgrade */}
+      <div className="tc-card border-primary/30 bg-gradient-to-br from-primary/5 to-violet-500/5">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-primary" />
+          </div>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Subscription Plan</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
+            <p className="text-sm font-medium text-foreground mb-1">Current Plan: <span className="text-primary">Free</span></p>
+            <p className="text-xs text-muted-foreground mb-3">You have access to 5 items. Upgrade to unlock unlimited items and AI features.</p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => (window.location.href = '/pricing')}
+                className="bg-primary hover:bg-primary/90"
+              >
+                View Plans
+              </Button>
+              <Button
+                onClick={() => (window.location.href = '/pricing?plan=pro')}
+                variant="outline"
+                className="border-primary/30 text-primary hover:bg-primary/10"
+              >
+                Upgrade to Pro
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-muted-foreground mb-1">Items Limit</p>
+              <p className="font-semibold text-foreground">5 / ∞</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-muted-foreground mb-1">AI Assistant</p>
+              <p className="font-semibold text-foreground">Pro Plus Only</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Integrations */}
       <div className="tc-card">
         <div className="flex items-center gap-2 mb-5">
@@ -235,7 +276,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Danger Zone */}
+      {/* Danger Zone - moved to end */}
       <div className="tc-card border-red-500/20">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Link } from 'wouter';
 import { TIER_CONFIG } from '@shared/tiers';
+import { trpc } from '@/lib/trpc';
 
 interface PaymentConfirmationProps {
   tier: 'pro' | 'pro_plus';
@@ -34,6 +35,8 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
   const tierConfig = TIER_CONFIG[tier];
   const reference = `${BANK_DETAILS.reference}${Date.now()}`;
 
+  const sendEmailMutation = trpc.payment.sendPaymentEmail.useMutation();
+
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopied(label);
@@ -49,12 +52,16 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
 
     setIsSubmitting(true);
     try {
-      // Simulate email sending
-      await new Promise(r => setTimeout(r, 1500));
+      await sendEmailMutation.mutateAsync({
+        email,
+        tier,
+        reference,
+      });
       
       toast.success('Banking details sent to your email');
       setPaymentSent(true);
     } catch (error) {
+      console.error('Email error:', error);
       toast.error('Failed to send email. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -283,6 +290,10 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
             Send Details to Email
           </h3>
 
+          <p className="text-sm text-muted-foreground mb-4">
+            Enter your email address to receive the banking details. You can also copy the details above to make your transfer immediately.
+          </p>
+
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -301,11 +312,12 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
               onClick={handleSendEmail}
               disabled={isSubmitting || paymentSent}
               className="w-full gap-2"
+              size="lg"
             >
               {paymentSent ? (
                 <>
                   <Check className="w-4 h-4" />
-                  Details Sent!
+                  Details Sent to Email!
                 </>
               ) : isSubmitting ? (
                 'Sending...'
@@ -318,9 +330,11 @@ export default function PaymentConfirmation({ tier, email: initialEmail }: Payme
             </Button>
 
             {paymentSent && (
-              <p className="text-sm text-emerald-500">
-                ✓ Banking details have been sent to your email. Check your inbox for the payment information.
-              </p>
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <p className="text-sm text-emerald-600">
+                  ✓ Banking details have been sent to <strong>{email}</strong>. Check your inbox for the payment information.
+                </p>
+              </div>
             )}
           </div>
         </div>
