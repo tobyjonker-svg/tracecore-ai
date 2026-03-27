@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const { state } = useApp();
-  const { user, loading, isAuthenticated } = useAuth({ redirectOnUnauthenticated: true });
+  const { user, loading, isAuthenticated } = useAuth();
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold
@@ -69,11 +69,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
     );
-  }
-
-  // If not authenticated, the useAuth hook will redirect
-  if (!isAuthenticated) {
-    return null;
   }
 
   return (

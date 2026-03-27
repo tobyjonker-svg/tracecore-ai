@@ -29,6 +29,11 @@ import Pricing from "./pages/Pricing";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
 import NotFound from "./pages/NotFound";
 
+function PaymentRoute() {
+  const tier = new URLSearchParams(window.location.search).get('tier') as 'pro' | 'pro_plus' | null;
+  return tier ? <PaymentConfirmation tier={tier} /> : <NotFound />;
+}
+
 function DashboardRouter() {
   // Dashboard routes (protected by DashboardLayout)
   return (
@@ -51,14 +56,9 @@ function DashboardRouter() {
   );
 }
 
-function PaymentRoute() {
-  const [location] = useLocation();
-  const tier = new URLSearchParams(location.split('?')[1]).get('tier') as 'pro' | 'pro_plus' | null;
-  return tier ? <PaymentConfirmation tier={tier} /> : <NotFound />;
-}
-
 function Router() {
   // Main router - public pages first, then dashboard
+  // IMPORTANT: Payment route MUST come before DashboardRouter catch-all
   return (
     <Switch>
       <Route path="/" component={Landing} />

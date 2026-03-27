@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -16,8 +17,12 @@ export function registerOAuthRoutes(app: Express) {
       const redirectUri = `${req.protocol}://${req.get('host')}/api/oauth/callback`;
       const state = Buffer.from(redirectUri).toString('base64');
       const oauthPortalUrl = "https://auth.manus.im";
-      const { ENV } = require("./env");
       const appId = ENV.appId;
+      
+      if (!appId) {
+        console.error("[OAuth] appId not configured");
+        return res.status(500).json({ error: "OAuth not configured" });
+      }
       
       const url = new URL(`${oauthPortalUrl}/app-auth`);
       url.searchParams.set("appId", appId);
