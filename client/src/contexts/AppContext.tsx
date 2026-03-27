@@ -23,6 +23,7 @@ import {
 // ─── Action Types ─────────────────────────────────────────────────────────────
 
 type Action =
+  | { type: 'UPDATE_WORKSPACE'; payload: Partial<AppState['workspace']> }
   | { type: 'ADD_SUPPLIER'; payload: Omit<Supplier, 'id' | 'workspaceId' | 'createdAt'> }
   | { type: 'DELETE_SUPPLIER'; payload: string }
   | { type: 'ADD_INPUT'; payload: Omit<Input, 'id' | 'workspaceId' | 'createdAt'> }
@@ -45,6 +46,10 @@ function reducer(state: AppState, action: Action): AppState {
   const now = new Date().toISOString();
 
   switch (action.type) {
+    case 'UPDATE_WORKSPACE': {
+      return { ...state, workspace: { ...state.workspace, ...action.payload } };
+    }
+
     case 'ADD_SUPPLIER': {
       const supplier: Supplier = {
         id: generateId('sup'),

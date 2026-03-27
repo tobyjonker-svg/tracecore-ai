@@ -12,6 +12,15 @@ export type BusinessType =
   | 'Cosmetics'
   | 'Food Production'
   | 'Toy Manufacturing'
+  | 'Nutraceuticals'
+  | 'Supplements'
+  | 'Essential Oils'
+  | 'Skincare'
+  | 'Beverages'
+  | 'Spices & Seasonings'
+  | 'Herbal Tea'
+  | 'Craft Goods'
+  | 'Artisanal Products'
   | 'Other';
 
 export interface Workspace {
@@ -20,6 +29,11 @@ export interface Workspace {
   businessType: BusinessType;
   customCategory?: string;
   createdAt: string;
+  // Workflow customization
+  enableInputs: boolean;
+  enableOrders: boolean;
+  enableShipping: boolean;
+  enableProductionRuns: boolean;
 }
 
 export interface Supplier {
@@ -118,9 +132,13 @@ const WORKSPACE_ID = 'ws-mycoalchemy';
 export const EMPTY_STATE: AppState = {
   workspace: {
     id: WORKSPACE_ID,
-    name: 'My Business',
+    name: '',
     businessType: 'Other',
     createdAt: new Date().toISOString(),
+    enableInputs: true,
+    enableOrders: true,
+    enableShipping: true,
+    enableProductionRuns: true,
   },
   suppliers: [],
   inputs: [],
@@ -136,6 +154,10 @@ export const INITIAL_STATE: AppState = {
     name: 'MycoAlchemy',
     businessType: 'Mushroom Extracts',
     createdAt: '2025-01-15T08:00:00Z',
+    enableInputs: true,
+    enableOrders: true,
+    enableShipping: true,
+    enableProductionRuns: true,
   },
 
   suppliers: [

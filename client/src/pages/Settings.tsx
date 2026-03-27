@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
-import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,24 +25,111 @@ const BUSINESS_TYPES: BusinessType[] = [
   'Cosmetics',
   'Food Production',
   'Toy Manufacturing',
+  'Nutraceuticals',
+  'Supplements',
+  'Essential Oils',
+  'Skincare',
+  'Beverages',
+  'Spices & Seasonings',
+  'Herbal Tea',
+  'Craft Goods',
+  'Artisanal Products',
   'Other',
 ];
 
-const TEAM_MEMBERS = [
-  { name: 'Alex Chen', email: 'alex@mycoalchemy.com', role: 'Owner', avatar: 'AC' },
-  { name: 'Sarah Kim', email: 'sarah@mycoalchemy.com', role: 'Manager', avatar: 'SK' },
-  { name: 'Jordan Lee', email: 'jordan@mycoalchemy.com', role: 'Operator', avatar: 'JL' },
-];
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Owner' | 'Manager' | 'Operator';
+}
 
 export default function Settings() {
   const { state, dispatch } = useApp();
   const [workspaceName, setWorkspaceName] = useState(state.workspace.name);
   const [businessType, setBusinessType] = useState<BusinessType>(state.workspace.businessType);
   const [customCategory, setCustomCategory] = useState(state.workspace.customCategory ?? '');
-  const [inviteEmail, setInviteEmail] = useState('');
+  
+  // Team members state
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [editingEmail, setEditingEmail] = useState('');
+  const [editingRole, setEditingRole] = useState<'Owner' | 'Manager' | 'Operator'>('Operator');
+  const [showAddMember, setShowAddMember] = useState(false);
+  
+  // Workflow customization
+  const [enableInputs, setEnableInputs] = useState(state.workspace.enableInputs ?? true);
+  const [enableOrders, setEnableOrders] = useState(state.workspace.enableOrders ?? true);
+  const [enableShipping, setEnableShipping] = useState(state.workspace.enableShipping ?? true);
+  const [enableProductionRuns, setEnableProductionRuns] = useState(state.workspace.enableProductionRuns ?? true);
 
   const handleSaveWorkspace = () => {
+    if (!workspaceName.trim()) {
+      toast.error('Please enter a workspace name');
+      return;
+    }
+    dispatch({
+      type: 'UPDATE_WORKSPACE',
+      payload: {
+        name: workspaceName,
+        businessType,
+        customCategory,
+        enableInputs,
+        enableOrders,
+        enableShipping,
+        enableProductionRuns,
+      },
+    });
     toast.success('Workspace settings saved');
+  };
+
+  const handleAddTeamMember = () => {
+    if (!editingName.trim() || !editingEmail.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    const newMember: TeamMember = {
+      id: Date.now().toString(),
+      name: editingName,
+      email: editingEmail,
+      role: editingRole,
+    };
+    setTeamMembers([...teamMembers, newMember]);
+    setEditingName('');
+    setEditingEmail('');
+    setEditingRole('Operator');
+    setShowAddMember(false);
+    toast.success('Team member added');
+  };
+
+  const handleEditTeamMember = (member: TeamMember) => {
+    setEditingMemberId(member.id);
+    setEditingName(member.name);
+    setEditingEmail(member.email);
+    setEditingRole(member.role);
+  };
+
+  const handleSaveTeamMember = () => {
+    if (!editingName.trim() || !editingEmail.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setTeamMembers(teamMembers.map(m =>
+      m.id === editingMemberId
+        ? { ...m, name: editingName, email: editingEmail, role: editingRole }
+        : m
+    ));
+    setEditingMemberId(null);
+    setEditingName('');
+    setEditingEmail('');
+    setEditingRole('Operator');
+    toast.success('Team member updated');
+  };
+
+  const handleDeleteTeamMember = (id: string) => {
+    setTeamMembers(teamMembers.filter(m => m.id !== id));
+    toast.success('Team member removed');
   };
 
   const handleReset = () => {
@@ -51,19 +138,21 @@ export default function Settings() {
     setTimeout(() => window.location.reload(), 500);
   };
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail.trim()) return;
-    toast.success(`Invitation sent to ${inviteEmail}`);
-    setInviteEmail('');
+  const getAvatarInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
-    <div className="p-6 space-y-6 page-enter max-w-3xl">
+    <div className="p-6 space-y-6 page-enter max-w-4xl">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Settings</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Configure your workspace, business type, and team access.
+          Configure your workspace, business type, team, and workflow.
         </p>
       </div>
 
@@ -81,6 +170,7 @@ export default function Settings() {
             <Input
               value={workspaceName}
               onChange={e => setWorkspaceName(e.target.value)}
+              placeholder="Enter your business name"
               className="bg-muted/50 border-border focus:border-primary/50 max-w-sm"
             />
           </div>
@@ -117,183 +207,271 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Team Members */}
-      <div className="tc-card">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-            <Users className="w-4 h-4 text-cyan-400" />
-          </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Team Members</h2>
-        </div>
-
-        <div className="space-y-3 mb-5">
-          {TEAM_MEMBERS.map(member => (
-            <div key={member.email} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/60 to-violet-500/60 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">{member.avatar}</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">{member.email}</p>
-                </div>
-              </div>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
-                member.role === 'Owner'
-                  ? 'text-primary bg-primary/10 border-primary/20'
-                  : member.role === 'Manager'
-                  ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                  : 'text-muted-foreground bg-muted border-border'
-              }`}>
-                {member.role}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <form onSubmit={handleInvite} className="flex gap-2">
-          <Input
-            type="email"
-            value={inviteEmail}
-            onChange={e => setInviteEmail(e.target.value)}
-            placeholder="colleague@company.com"
-            className="bg-muted/50 border-border focus:border-primary/50 flex-1"
-          />
-          <Button type="submit" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
-            Invite
-          </Button>
-        </form>
-      </div>
-
-      {/* Notifications */}
-      <div className="tc-card">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
-            <Bell className="w-4 h-4 text-amber-400" />
-          </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Notifications</h2>
-        </div>
-        <div className="space-y-3">
-          {[
-            { label: 'Low stock alerts', description: 'Notify when product stock falls below threshold', enabled: true },
-            { label: 'Order status updates', description: 'Notify on order status changes', enabled: true },
-            { label: 'Production run completions', description: 'Notify when a production run is logged', enabled: false },
-            { label: 'Weekly summary report', description: 'Receive weekly operations digest', enabled: true },
-          ].map(item => (
-            <div key={item.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
-              </div>
-              <button
-                onClick={() => toast.info('Notification settings saved')}
-                className={`w-10 h-5 rounded-full transition-colors relative ${
-                  item.enabled ? 'bg-primary' : 'bg-muted'
-                }`}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                  item.enabled ? 'left-5' : 'left-0.5'
-                }`} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Subscription / Upgrade */}
-      <div className="tc-card border-primary/30 bg-gradient-to-br from-primary/5 to-violet-500/5">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-primary" />
-          </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Subscription Plan</h2>
-        </div>
-        <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm font-medium text-foreground mb-1">Current Plan: <span className="text-primary">Free</span></p>
-            <p className="text-xs text-muted-foreground mb-3">You have access to 5 items. Upgrade to unlock unlimited items and AI features.</p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => (window.location.href = '/pricing')}
-                className="bg-primary hover:bg-primary/90"
-              >
-                View Plans
-              </Button>
-              <Button
-                onClick={() => (window.location.href = '/pricing?plan=pro')}
-                variant="outline"
-                className="border-primary/30 text-primary hover:bg-primary/10"
-              >
-                Upgrade to Pro
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 rounded-lg bg-muted/30">
-              <p className="text-muted-foreground mb-1">Items Limit</p>
-              <p className="font-semibold text-foreground">5 / ∞</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30">
-              <p className="text-muted-foreground mb-1">AI Assistant</p>
-              <p className="font-semibold text-foreground">Pro Plus Only</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Integrations */}
+      {/* Workflow Customization */}
       <div className="tc-card">
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-            <Shield className="w-4 h-4 text-violet-400" />
+            <Zap className="w-4 h-4 text-violet-400" />
           </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Integrations</h2>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Workflow Features</h2>
         </div>
-        <div className="space-y-2">
-          {[
-            { name: 'Shopify', desc: 'Sync orders from your Shopify store', status: 'Available' },
-            { name: 'QuickBooks', desc: 'Export financial data to QuickBooks', status: 'Coming Soon' },
-            { name: 'Slack', desc: 'Receive alerts in your Slack workspace', status: 'Available' },
-            { name: 'Xero', desc: 'Accounting integration', status: 'Coming Soon' },
-          ].map(item => (
-            <div key={item.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-              <div>
-                <p className="text-sm font-medium text-foreground">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          Enable or disable features based on your business model. For example, service-based businesses might not need Orders or Shipping.
+        </p>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={enableInputs}
+              onChange={e => setEnableInputs(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Raw Inputs</p>
+              <p className="text-xs text-muted-foreground">Track suppliers and raw materials</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={enableProductionRuns}
+              onChange={e => setEnableProductionRuns(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Production Runs</p>
+              <p className="text-xs text-muted-foreground">Track production batches and schedules</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={enableOrders}
+              onChange={e => setEnableOrders(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Orders</p>
+              <p className="text-xs text-muted-foreground">Manage customer orders and fulfillment</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={enableShipping}
+              onChange={e => setEnableShipping(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Shipping</p>
+              <p className="text-xs text-muted-foreground">Track shipments and delivery</p>
+            </div>
+          </label>
+        </div>
+        <Button onClick={handleSaveWorkspace} className="bg-primary hover:bg-primary/90 mt-4">
+          Save Workflow Settings
+        </Button>
+      </div>
+
+      {/* Team Members */}
+      <div className="tc-card">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+              <Users className="w-4 h-4 text-cyan-400" />
+            </div>
+            <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Team Members</h2>
+          </div>
+          {!showAddMember && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowAddMember(true)}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Member
+            </Button>
+          )}
+        </div>
+
+        {/* Add New Member Form */}
+        {showAddMember && (
+          <div className="mb-5 p-4 rounded-lg border border-border bg-muted/30 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Name</Label>
+                <Input
+                  value={editingName}
+                  onChange={e => setEditingName(e.target.value)}
+                  placeholder="Team member name"
+                  className="bg-background border-border"
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                  item.status === 'Available'
-                    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                    : 'text-muted-foreground bg-muted border-border'
-                }`}>
-                  {item.status}
-                </span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Email</Label>
+                <Input
+                  value={editingEmail}
+                  onChange={e => setEditingEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  type="email"
+                  className="bg-background border-border"
+                />
               </div>
             </div>
-          ))}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Role</Label>
+              <Select value={editingRole} onValueChange={v => setEditingRole(v as any)}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="Manager">Manager</SelectItem>
+                  <SelectItem value="Operator">Operator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={handleAddTeamMember}
+                className="bg-primary hover:bg-primary/90 gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Add
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowAddMember(false);
+                  setEditingName('');
+                  setEditingEmail('');
+                  setEditingRole('Operator');
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Team Members List */}
+        <div className="space-y-3">
+          {teamMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No team members added yet. Click "Add Member" to get started.
+            </p>
+          ) : (
+            teamMembers.map(member => (
+              <div key={member.id} className="flex items-center justify-between py-3 px-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                {editingMemberId === member.id ? (
+                  <div className="flex-1 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Input
+                        value={editingName}
+                        onChange={e => setEditingName(e.target.value)}
+                        placeholder="Name"
+                        className="bg-background border-border text-sm"
+                      />
+                      <Input
+                        value={editingEmail}
+                        onChange={e => setEditingEmail(e.target.value)}
+                        placeholder="Email"
+                        type="email"
+                        className="bg-background border-border text-sm"
+                      />
+                    </div>
+                    <Select value={editingRole} onValueChange={v => setEditingRole(v as any)}>
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Owner">Owner</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Operator">Operator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleSaveTeamMember}
+                        className="bg-primary hover:bg-primary/90 gap-2"
+                      >
+                        <Check className="w-4 h-4" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingMemberId(null)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/60 to-violet-500/60 flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">{getAvatarInitials(member.name)}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">{member.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
+                        member.role === 'Owner'
+                          ? 'text-primary bg-primary/10 border-primary/20'
+                          : member.role === 'Manager'
+                          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                          : 'text-muted-foreground bg-muted border-border'
+                      }`}>
+                        {member.role}
+                      </span>
+                      <button
+                        onClick={() => handleEditTeamMember(member)}
+                        className="p-1.5 hover:bg-muted rounded transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTeamMember(member.id)}
+                        className="p-1.5 hover:bg-muted rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-400" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Danger Zone - moved to end */}
-      <div className="tc-card border-red-500/20">
-        <div className="flex items-center gap-2 mb-4">
+      {/* Danger Zone */}
+      <div className="tc-card border-red-500/20 bg-red-500/5">
+        <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
-            <RefreshCw className="w-4 h-4 text-red-400" />
+            <Shield className="w-4 h-4 text-red-400" />
           </div>
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Reset Demo Data</h2>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Danger Zone</h2>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Reset all data back to the original demo state. This will clear any changes you've made during this session.
+        <p className="text-xs text-muted-foreground mb-4">
+          Reset all data to demo defaults. This action cannot be undone.
         </p>
         <Button
-          variant="outline"
-          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
           onClick={handleReset}
+          variant="outline"
+          className="border-red-500/50 text-red-400 hover:bg-red-500/10"
         >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Reset to Demo Defaults
+          Reset to Demo Data
         </Button>
       </div>
     </div>
