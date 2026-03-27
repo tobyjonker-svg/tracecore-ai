@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
 import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
@@ -63,6 +64,10 @@ export default function Settings() {
   const [enableOrders, setEnableOrders] = useState(state.workspace.enableOrders ?? true);
   const [enableShipping, setEnableShipping] = useState(state.workspace.enableShipping ?? true);
   const [enableProductionRuns, setEnableProductionRuns] = useState(state.workspace.enableProductionRuns ?? true);
+  
+  // Save success state
+  const [, navigate] = useLocation();
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSaveWorkspace = () => {
     if (!workspaceName.trim()) {
@@ -82,6 +87,8 @@ export default function Settings() {
       },
     });
     toast.success('Workspace settings saved');
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 5000); // Reset after 5 seconds
   };
 
   const handleAddTeamMember = () => {
@@ -201,9 +208,20 @@ export default function Settings() {
               </p>
             </div>
           )}
-          <Button onClick={handleSaveWorkspace} className="bg-primary hover:bg-primary/90">
-            Save Changes
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSaveWorkspace} className="bg-primary hover:bg-primary/90">
+              Save Changes
+            </Button>
+            {saveSuccess && (
+              <Button
+                onClick={() => navigate('/app')}
+                className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+              >
+                <ChevronRight className="w-4 h-4" />
+                Explore Dashboard
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
