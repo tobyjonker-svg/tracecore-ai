@@ -7,6 +7,7 @@ import { ArrowRight, Zap, BarChart3, Lock, Smartphone, ChevronLeft, ChevronRight
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { getLoginUrl } from '@/const';
+import WorkflowBuilder from '@/components/WorkflowBuilder';
 
 export default function Landing() {
   const [isLoading, setIsLoading] = useState(false);
@@ -82,11 +83,11 @@ export default function Landing() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Manage Your Manufacturing Operations with AI
+            Manage Your Business Operations with AI
           </h1>
 
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            TraceCore AI gives you complete visibility and control over your supply chain, production, and orders. From raw materials to shipped products, track everything in real-time.
+            Whether you're selling one product or a thousand, TraceCore AI gives you complete visibility and control over your entire business. From sourcing to delivery, track everything in real-time—no matter your business size or model.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -214,16 +215,40 @@ export default function Landing() {
           </h2>
 
           <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
-            TraceCore AI tracks every step of your manufacturing process, from sourcing raw materials to delivering finished products to customers.
+            TraceCore AI adapts to your unique business workflow. Whether you're a retailer, wholesaler, manufacturer, or service provider, define your own workflow stages and track every step of your operations.
           </p>
 
-          <div className="mt-12 grid md:grid-cols-5 gap-4 text-center">
-            {['Suppliers', 'Raw Materials', 'Production', 'Inventory', 'Orders'].map((step, idx) => (
-              <div key={idx}>
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
-                  <span className="font-bold text-primary">{idx + 1}</span>
-                </div>
-                <p className="font-medium text-foreground">{step}</p>
+          <div className="mt-12 max-w-4xl mx-auto">
+            <WorkflowBuilder defaultTemplate="Manufacturing" />
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose TraceCore Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-bold text-foreground text-center mb-12">
+            Why Choose TraceCore AI
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                title: 'Works for Any Business',
+                description: 'From one-person shops to large enterprises, TraceCore adapts to your business model and size.',
+              },
+              {
+                title: 'Fully Customizable',
+                description: 'Define your own workflow stages, customize colors and icons, and organize operations your way.',
+              },
+              {
+                title: 'AI-Powered Insights',
+                description: 'Get intelligent recommendations, automate repetitive tasks, and make data-driven decisions.',
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="p-6 rounded-lg border border-border bg-card hover:border-primary/50 transition-colors">
+                <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
+                <p className="text-muted-foreground">{item.description}</p>
               </div>
             ))}
           </div>
