@@ -225,3 +225,20 @@
 - [x] Verify business name displays correctly in greeting
 - [x] Verify business name persists across page refreshes
 - [x] All 158 tests passing
+
+
+## Phase 24: Fix Home Page and Settings to Match User's Workflow
+- [x] Fix production volume chart to show flat line (0 data) for new users
+- [x] Fix orders trend chart to show flat line (0 data) for new users
+- [x] Update Core Operations Workflow section to show only user's selected workflow stages
+- [x] Remove workflow stages that user didn't select (e.g., don't show "Production" for Retail users)
+- [x] Add "Customize" button to home page workflow section
+- [x] Create WorkflowCustomizer modal component for home page and settings
+- [x] Allow users to add/remove stages from their workflow
+- [x] Update Settings page to display user's workflow configuration
+- [x] Add workflow editing capability to Settings page with Customize button
+- [x] Workflow changes saved to AppContext (persisted in localStorage)
+- [x] Created WorkflowCustomizer component with 4 workflow stages
+- [x] All 158 tests passing (no regressions)
+- [x] TypeScript compilation with no errors
+- [x] Dev server running smoothly with HMR updates

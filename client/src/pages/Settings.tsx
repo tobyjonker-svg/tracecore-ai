@@ -10,6 +10,7 @@ import { BusinessType } from '@/lib/store';
 import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic, Mail } from 'lucide-react';
 import AISetupWizard from '@/components/AISetupWizard';
 import { EmailTemplateCustomizer } from '@/components/EmailTemplateCustomizer';
+import { WorkflowCustomizer } from '@/components/WorkflowCustomizer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,6 +75,9 @@ export default function Settings() {
   
   // Email template customization
   const [isEmailTemplateOpen, setIsEmailTemplateOpen] = useState(false);
+  
+  // Workflow customizer
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   const handleSaveWorkspace = () => {
     if (!workspaceName.trim()) {
@@ -582,6 +586,7 @@ export default function Settings() {
         businessType={businessType}
         businessName={workspaceName}
       />
+      <WorkflowCustomizer open={isCustomizerOpen} onOpenChange={setIsCustomizerOpen} />
     </div>
   );
 }
