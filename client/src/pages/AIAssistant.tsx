@@ -7,11 +7,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Sparkles, Send, Mic, Bot, User, Zap, Package, FlaskConical, Factory, ShoppingCart } from 'lucide-react';
+import { Sparkles, Send, Mic, Bot, User, Zap, Package, FlaskConical, Factory, ShoppingCart, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { VoiceCommandCenter } from '@/components/VoiceCommandCenter';
+import { CustomVoiceCommandBuilder } from '@/components/CustomVoiceCommandBuilder';
 
 interface Message {
   id: string;
@@ -168,6 +170,8 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [showCommandBuilder, setShowCommandBuilder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -251,7 +255,21 @@ export default function AIAssistant() {
               <p className="text-xs text-muted-foreground">Prototype simulation · Natural language operations</p>
             </div>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setVoiceOpen(true)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              title="Open voice command center"
+            >
+              <Mic className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+            </button>
+            <button
+              onClick={() => setShowCommandBuilder(!showCommandBuilder)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              title="Customize voice commands"
+            >
+              <Settings className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+            </button>
             <span className="tc-badge-info">
               <Zap className="w-3 h-3" />
               Beta
@@ -377,6 +395,31 @@ export default function AIAssistant() {
           This is a simulated AI assistant. In production, TraceCore AI will use advanced NLP to understand complex operations commands.
         </p>
       </div>
+
+      {/* Voice Command Center Modal */}
+      <VoiceCommandCenter isOpen={voiceOpen} onClose={() => setVoiceOpen(false)} />
+
+      {/* Custom Voice Command Builder */}
+      {showCommandBuilder && (
+        <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-card rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 flex items-center justify-between p-6 border-b border-border bg-card">
+                <h2 className="text-xl font-semibold text-foreground">Customize Voice Commands</h2>
+                <button
+                  onClick={() => setShowCommandBuilder(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  X
+                </button>
+              </div>
+              <div className="p-6">
+                <CustomVoiceCommandBuilder />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
