@@ -29,22 +29,43 @@ export default function OnboardingTour({ steps, isOpen, onClose, onComplete }: O
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightElement, setHighlightElement] = useState<HTMLElement | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [elementFound, setElementFound] = useState(true);
 
   const step = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
 
   useEffect(() => {
-    if (!isOpen || !step.target) {
+    if (!isOpen) {
       setHighlightElement(null);
       return;
     }
 
-    const element = document.querySelector(step.target) as HTMLElement;
-    if (element) {
-      setHighlightElement(element);
-      updateTooltipPosition(element);
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!step.target) {
+      setElementFound(true);
+      setHighlightElement(null);
+      return;
+    }
+
+    try {
+      const element = document.querySelector(step.target) as HTMLElement;
+      if (element) {
+        setHighlightElement(element);
+        setElementFound(true);
+        updateTooltipPosition(element);
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // Element not found, but don't crash - just show the tooltip without highlight
+        setHighlightElement(null);
+        setElementFound(false);
+        setTooltipPosition({ top: 100, left: 50 });
+      }
+    } catch (error) {
+      // Invalid selector or other error - gracefully handle
+      console.warn(`Tour step selector error: ${step.target}`, error);
+      setHighlightElement(null);
+      setElementFound(false);
+      setTooltipPosition({ top: 100, left: 50 });
     }
   }, [currentStep, isOpen, step.target]);
 
@@ -104,80 +125,92 @@ export default function OnboardingTour({ steps, isOpen, onClose, onComplete }: O
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/40 z-40 pointer-events-none" />
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
 
-      {/* Highlight */}
+      {/* Highlight Box */}
       {highlightElement && (
         <div
-          className="fixed border-2 border-primary rounded-lg pointer-events-none z-40 shadow-lg shadow-primary/50 animate-pulse"
+          className="fixed z-40 border-2 border-blue-500 rounded-lg pointer-events-none"
           style={{
             top: highlightElement.getBoundingClientRect().top - 4,
             left: highlightElement.getBoundingClientRect().left - 4,
             width: highlightElement.getBoundingClientRect().width + 8,
             height: highlightElement.getBoundingClientRect().height + 8,
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
           }}
         />
       )}
 
       {/* Tooltip */}
       <div
-        className="fixed bg-card border border-border rounded-lg shadow-xl p-6 z-50 max-w-sm"
+        className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-6 max-w-sm"
         style={{
           top: `${tooltipPosition.top}px`,
           left: `${tooltipPosition.left}px`,
         }}
       >
-        {/* Step Counter */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-            Step {currentStep + 1} of {steps.length}
-          </span>
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h3 className="font-semibold text-foreground text-lg">{step.title}</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Step {currentStep + 1} of {steps.length}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-muted rounded transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-4 h-4 text-muted-foreground" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Title */}
-        <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
-
         {/* Description */}
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-          {step.description}
-        </p>
+        <p className="text-sm text-foreground mb-4">{step.description}</p>
+
+        {/* Element Not Found Warning */}
+        {!elementFound && step.target && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-4">
+            <p className="text-xs text-yellow-600">
+              💡 Couldn't find the element on this page. Continue to the next step.
+            </p>
+          </div>
+        )}
 
         {/* Progress Bar */}
-        <div className="w-full bg-muted rounded-full h-1 mb-6">
+        <div className="w-full bg-muted rounded-full h-1 mb-4">
           <div
-            className="bg-primary h-1 rounded-full transition-all duration-300"
+            className="bg-blue-500 h-1 rounded-full transition-all"
             style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
           />
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="sm"
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
             onClick={handlePrevious}
             disabled={isFirstStep}
-            className="gap-1"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
-          </Button>
+            Back
+          </button>
 
-          <Button
+          <button
+            onClick={onClose}
+            className="flex-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Skip
+          </button>
+
+          <button
             onClick={handleNext}
-            size="sm"
-            className="flex-1 gap-1"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-500 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
           >
             {isLastStep ? (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Complete Tour
+                Done
               </>
             ) : (
               <>
@@ -185,16 +218,8 @@ export default function OnboardingTour({ steps, isOpen, onClose, onComplete }: O
                 <ChevronRight className="w-4 h-4" />
               </>
             )}
-          </Button>
+          </button>
         </div>
-
-        {/* Skip Option */}
-        <button
-          onClick={onClose}
-          className="w-full mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Skip tour
-        </button>
       </div>
     </>
   );
