@@ -26,6 +26,7 @@ import {
   Menu,
   X,
   Loader2,
+  CreditCard,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -174,6 +175,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <Sparkles className="w-5 h-5 shrink-0" />
             <span className="truncate">AI Assistant</span>
+          </Link>
+        </div>
+
+        {/* Admin Payment Dashboard Link */}
+        <div className="px-3 py-3 border-t border-border">
+          <Link
+            href="/admin/payments"
+            onClick={closeSidebar}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              location === '/admin/payments'
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            <CreditCard className="w-5 h-5 shrink-0" />
+            <span className="truncate">Payments</span>
           </Link>
         </div>
       </aside>

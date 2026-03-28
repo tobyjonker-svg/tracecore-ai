@@ -7,8 +7,9 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
-import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic, Mail } from 'lucide-react';
 import AISetupWizard from '@/components/AISetupWizard';
+import { EmailTemplateCustomizer } from '@/components/EmailTemplateCustomizer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,6 +71,9 @@ export default function Settings() {
   // Save success state
   const [, navigate] = useLocation();
   const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Email template customization
+  const [isEmailTemplateOpen, setIsEmailTemplateOpen] = useState(false);
 
   const handleSaveWorkspace = () => {
     if (!workspaceName.trim()) {
@@ -228,6 +232,26 @@ export default function Settings() {
       </div>
 
       {/* Workflow Customization */}
+      {/* Email Template Customization */}
+      <div className="tc-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
+            <Mail className="w-4 h-4 text-amber-400" />
+          </div>
+          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Email Templates</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">
+          Customize the banking details email sent to customers during payment.
+        </p>
+        <Button
+          onClick={() => setIsEmailTemplateOpen(true)}
+          className="w-full gap-2 bg-amber-600 hover:bg-amber-700"
+        >
+          <Mail className="w-4 h-4" />
+          Customize Email Template
+        </Button>
+      </div>
+
       {/* AI Assistant Setup */}
       <div className="tc-card">
         <div className="flex items-center gap-3 mb-4">
@@ -527,6 +551,17 @@ export default function Settings() {
           Reset to Demo Data
         </Button>
       </div>
+
+      {/* Email Template Customizer Modal */}
+      <EmailTemplateCustomizer
+        isOpen={isEmailTemplateOpen}
+        onClose={() => setIsEmailTemplateOpen(false)}
+        onSave={(template) => {
+          // Save template to localStorage or state
+          localStorage.setItem('emailTemplate', JSON.stringify(template));
+          toast.success('Email template saved successfully');
+        }}
+      />
 
       {/* AI Setup Wizard Modal */}
       <AISetupWizard
