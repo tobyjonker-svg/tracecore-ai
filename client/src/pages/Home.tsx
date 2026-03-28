@@ -11,8 +11,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime, timeAgo } from '@/lib/store';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { OnboardingTour } from '@/components/OnboardingTour';
-import { WorkflowCustomizer } from '@/components/WorkflowCustomizer';
+import OnboardingTour from '@/components/OnboardingTour';
 import { DASHBOARD_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import {
   Package,
@@ -41,52 +40,25 @@ import {
 import { Link } from 'wouter';
 import { cn } from '@/lib/utils';
 
-// Mock chart data - will be replaced with real data
-const getProductionChartData = (products: any[]) => {
-  const hasData = products.length > 0;
-  if (!hasData) {
-    return [
-      { day: 'Mon', units: 0 },
-      { day: 'Tue', units: 0 },
-      { day: 'Wed', units: 0 },
-      { day: 'Thu', units: 0 },
-      { day: 'Fri', units: 0 },
-      { day: 'Sat', units: 0 },
-      { day: 'Sun', units: 0 },
-    ];
-  }
-  return [
-    { day: 'Mon', units: 15 },
-    { day: 'Tue', units: 28 },
-    { day: 'Wed', units: 20 },
-    { day: 'Thu', units: 35 },
-    { day: 'Fri', units: 42 },
-    { day: 'Sat', units: 18 },
-    { day: 'Sun', units: 30 },
-  ];
-};
+// Mock chart data
+const productionChartData = [
+  { day: 'Mon', units: 15 },
+  { day: 'Tue', units: 28 },
+  { day: 'Wed', units: 20 },
+  { day: 'Thu', units: 35 },
+  { day: 'Fri', units: 42 },
+  { day: 'Sat', units: 18 },
+  { day: 'Sun', units: 30 },
+];
 
-const getOrdersChartData = (orders: any[]) => {
-  const hasData = orders.length > 0;
-  if (!hasData) {
-    return [
-      { week: 'W1', orders: 0 },
-      { week: 'W2', orders: 0 },
-      { week: 'W3', orders: 0 },
-      { week: 'W4', orders: 0 },
-      { week: 'W5', orders: 0 },
-      { week: 'W6', orders: 0 },
-    ];
-  }
-  return [
-    { week: 'W1', orders: 4 },
-    { week: 'W2', orders: 7 },
-    { week: 'W3', orders: 5 },
-    { week: 'W4', orders: 9 },
-    { week: 'W5', orders: 12 },
-    { week: 'W6', orders: 8 },
-  ];
-};
+const ordersChartData = [
+  { week: 'W1', orders: 4 },
+  { week: 'W2', orders: 7 },
+  { week: 'W3', orders: 5 },
+  { week: 'W4', orders: 9 },
+  { week: 'W5', orders: 12 },
+  { week: 'W6', orders: 8 },
+];
 
 const stockTrendData = [
   { month: 'Oct', stock: 120 },
@@ -165,7 +137,6 @@ export default function Home() {
 
   const { state } = useApp();
   const [isTourOpen, setIsTourOpen] = useState(false);
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const onboardingState = getOnboardingState();
 
   const totalProducts = state.products.length;
@@ -312,7 +283,7 @@ export default function Home() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={getProductionChartData(state.productionRuns)}>
+            <AreaChart data={productionChartData}>
               <defs>
                 <linearGradient id="prodGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="oklch(0.65 0.18 265)" stopOpacity={0.3} />
@@ -356,7 +327,7 @@ export default function Home() {
             <p className="text-xs text-muted-foreground mt-0.5">Last 6 weeks</p>
           </div>
           <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={getOrdersChartData(state.orders)} barSize={18}>
+            <BarChart data={ordersChartData} barSize={18}>
               <XAxis
                 dataKey="week"
                 tick={{ fill: 'oklch(0.58 0.012 265)', fontSize: 11 }}
@@ -485,46 +456,18 @@ export default function Home() {
 
       {/* ── Workflow Banner ────────────────────────────────────── */}
       <div className="tc-card overflow-hidden relative">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
-              Core Operations Workflow
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Your {state.workspace.businessType} workflow</p>
-          </div>
-          <button onClick={() => setIsCustomizerOpen(true)} className="text-xs text-primary hover:text-primary/80 font-medium">
-            Customize
-          </button>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
+            Core Operations Workflow
+          </h3>
+          <span className="text-xs text-muted-foreground">TraceCore AI tracks every step</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {state.workspace.enableInputs && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
-              <FlaskConical className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Raw Materials</span>
-            </div>
-          )}
-          {state.workspace.enableProductionRuns && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-              <Factory className="w-4 h-4 text-violet-400" />
-              <span className="text-sm text-violet-400 font-medium">Production</span>
-            </div>
-          )}
-          {state.workspace.enableOrders && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <ShoppingCart className="w-4 h-4 text-amber-400" />
-              <span className="text-sm text-amber-400 font-medium">Orders</span>
-            </div>
-          )}
-          {state.workspace.enableShipping && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <Truck className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm text-emerald-400 font-medium">Shipping</span>
-            </div>
-          )}
-          {!state.workspace.enableInputs && !state.workspace.enableProductionRuns && !state.workspace.enableOrders && !state.workspace.enableShipping && (
-            <p className="text-sm text-muted-foreground italic">No workflow stages configured. Go to Settings to customize.</p>
-          )}
-        </div>
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/tracecore-workflow-diagram-Gf8DoFfRvkV4nkQ2iKSKwU.webp"
+          alt="Operations workflow"
+          className="w-full rounded-lg object-cover"
+          style={{ maxHeight: '180px', objectPosition: 'center' }}
+        />
       </div>
 
       {/* ── Stock Overview ─────────────────────────────────────── */}
@@ -589,10 +532,11 @@ export default function Home() {
 
       {/* Onboarding Tour */}
       <OnboardingTour
-        open={isTourOpen}
-        onOpenChange={setIsTourOpen}
+        steps={DASHBOARD_TOUR_STEPS}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={() => markTourComplete('dashboard')}
       />
-      <WorkflowCustomizer open={isCustomizerOpen} onOpenChange={setIsCustomizerOpen} />
     </div>
   );
 }

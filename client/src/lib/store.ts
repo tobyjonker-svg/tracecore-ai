@@ -42,9 +42,6 @@ export interface Workspace {
   enableOrders: boolean;
   enableShipping: boolean;
   enableProductionRuns: boolean;
-  workflowStageNames?: Record<string, string>; // Custom names for workflow stages
-  currency?: string; // User's selected currency (ZAR, USD, etc.)
-  region?: string; // User's selected region
   // AI Configuration
   aiConfig?: AIConfig;
 }

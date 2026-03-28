@@ -31,65 +31,27 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { trpc } from '@/lib/trpc';
 import { CommandCenter } from './CommandCenter';
 import { cn } from '@/lib/utils';
 
-const ALL_NAV_ITEMS = [
-  { href: '/app', label: 'Home', icon: LayoutDashboard, isCore: true },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck, isCore: false },
-  { href: '/inputs', label: 'Inputs', icon: FlaskConical, isCore: false },
-  { href: '/products', label: 'Products', icon: Package, isCore: false },
-  { href: '/orders', label: 'Orders', icon: ShoppingCart, isCore: false },
-  { href: '/production', label: 'Production Runs', icon: Factory, isCore: false },
-  { href: '/inventory', label: 'Inventory Activity', icon: Activity, isCore: true },
-  { href: '/reports', label: 'Reports', icon: BarChart3, isCore: true },
-  { href: '/settings', label: 'Settings', icon: Settings, isCore: true },
+const NAV_ITEMS = [
+  { href: '/app', label: 'Home', icon: LayoutDashboard },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck },
+  { href: '/inputs', label: 'Inputs', icon: FlaskConical },
+  { href: '/products', label: 'Products', icon: Package },
+  { href: '/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/production', label: 'Production Runs', icon: Factory },
+  { href: '/inventory', label: 'Inventory Activity', icon: Activity },
+  { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
-  const [navItems, setNavItems] = useState(ALL_NAV_ITEMS);
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
-  const { data: workspace } = trpc.auth.getWorkspace.useQuery(undefined, {
-    enabled: !!user && isAuthenticated,
-  });
-
-  // Load user's workspace and update app context
-  useEffect(() => {
-    if (workspace && user) {
-      // Update app context with user's workspace data
-      dispatch({
-        type: 'UPDATE_WORKSPACE',
-        payload: {
-          id: workspace.id.toString(),
-          name: workspace.name || 'My Business',
-          businessType: (workspace.businessType || 'Other') as any,
-        },
-      });
-
-      // Build dynamic navigation based on workflow stages
-      if (workspace.workflowStages && Array.isArray(workspace.workflowStages)) {
-        const stageNames = workspace.workflowStages.map((s: any) => s.name);
-        
-        // Filter nav items: keep core items + workflow-related items that match selected stages
-        const filtered = ALL_NAV_ITEMS.filter(item => {
-          if (item.isCore) return true; // Always show core items
-          
-          // Check if this nav item matches any workflow stage
-          return stageNames.some((stageName: any) => 
-            item.label.toLowerCase().includes(stageName.toLowerCase()) ||
-            stageName.toLowerCase().includes(item.label.toLowerCase())
-          );
-        });
-        
-        setNavItems(filtered);
-      }
-    }
-  }, [workspace, user, dispatch]);
 
   // Check if this is a new user flow
   useEffect(() => {
@@ -164,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItems.map(item => {
+          {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const isActive = location === item.href || location.startsWith(item.href + '/');
             return (

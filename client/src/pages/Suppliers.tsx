@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDate } from '@/lib/store';
 import { Truck, Plus, Trash2, Mail, Phone, Package, Globe, Zap, HelpCircle } from 'lucide-react';
-import { OnboardingTour } from '@/components/OnboardingTour';
+import OnboardingTour from '@/components/OnboardingTour';
 import { SUPPLIERS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -300,8 +300,10 @@ export default function Suppliers() {
 
       {/* Onboarding Tour */}
       <OnboardingTour
-        open={isTourOpen}
-        onOpenChange={setIsTourOpen}
+        steps={SUPPLIERS_TOUR_STEPS}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={() => markTourComplete('suppliers')}
       />
     </div>
   );

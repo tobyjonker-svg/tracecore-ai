@@ -3,14 +3,7 @@
  * Defines tour steps for guided user walkthrough
  */
 
-export interface TourStep {
-  id: string;
-  title: string;
-  description: string;
-  target?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  action?: () => void;
-}
+import { TourStep } from '@/components/OnboardingTour';
 
 export const SUPPLIERS_TOUR_STEPS: TourStep[] = [
   {

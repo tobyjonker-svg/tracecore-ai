@@ -28,7 +28,6 @@ import AdminPaymentDashboard from "./pages/AdminPaymentDashboard";
 import WorkflowAnalytics from "./pages/WorkflowAnalytics";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
-import SignupFlow from "./pages/SignupFlow";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
 import NotFound from "./pages/NotFound";
 
@@ -68,7 +67,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/signup" component={SignupFlow} />
       <Route path="/payment" component={PaymentRoute} />
       <Route component={DashboardRouter} />
     </Switch>

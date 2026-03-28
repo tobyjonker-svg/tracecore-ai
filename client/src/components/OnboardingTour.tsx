@@ -1,287 +1,226 @@
 /**
- * Onboarding Tour — Comprehensive guided walkthrough for new users
- * Covers: business setup, workflow customization, dashboard, settings, AI, voice commands
+ * OnboardingTour Component
+ * Guided walkthrough for new users showing how to add suppliers and products
  */
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, X, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/contexts/AppContext';
-import { ChevronRight, ChevronLeft, X, Check, Sparkles } from 'lucide-react';
-import { WorkflowStageEditor } from './WorkflowStageEditor';
+import { cn } from '@/lib/utils';
 
-interface TourStep {
+export interface TourStep {
   id: string;
   title: string;
   description: string;
-  details: string[];
-  icon: React.ElementType;
+  target?: string; // CSS selector for element to highlight
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  action?: () => void;
+  highlightClass?: string;
 }
-
-const TOUR_STEPS: TourStep[] = [
-  {
-    id: 'welcome',
-    title: 'Welcome to TraceCore AI',
-    description: 'Let\'s set up your business and get you started',
-    details: [
-      'Your business name: {{businessName}}',
-      'Workflow type: {{workflowType}}',
-      'Currency: {{currency}}',
-      'Region: {{region}}',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'workflow-overview',
-    title: 'Your Workflow',
-    description: 'Here\'s your customized workflow for your business',
-    details: [
-      'Your workflow is tailored to your {{workflowType}} business',
-      'You can customize stage names anytime',
-      'Example: Rename "Raw Materials" to "Toys" if needed',
-      'Add or remove stages based on your needs',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'customize-stages',
-    title: 'Customize Workflow Stages',
-    description: 'Rename your workflow stages to match your business',
-    details: [
-      'Click "Edit" next to each stage name',
-      'Change "Raw Materials" to "Toys", "Inventory", etc.',
-      'Click the checkmark to save your changes',
-      'You can always reset to defaults if needed',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'home-dashboard',
-    title: 'Home Dashboard',
-    description: 'Your command center for business operations',
-    details: [
-      'KPI cards show your business metrics at a glance',
-      'Charts display production volume and order trends',
-      'Core Operations section shows your workflow',
-      'Recent activity and orders are listed below',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'sidebar-navigation',
-    title: 'Sidebar Navigation',
-    description: 'Quick access to all your business tools',
-    details: [
-      'Home: Your main dashboard',
-      'Workflow stages: Based on your selections',
-      'Inventory Activity: Track all changes',
-      'Reports: View analytics and insights',
-      'Settings: Configure your business',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'ai-setup',
-    title: 'AI Assistant Setup',
-    description: 'Configure your AI assistant for your business',
-    details: [
-      'Go to Settings → AI Assistant',
-      'Set up your AI model preferences',
-      'Configure automation rules',
-      'Enable voice commands for hands-free operation',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'settings',
-    title: 'Settings & Configuration',
-    description: 'Manage your business settings',
-    details: [
-      'Business Details: Update company information',
-      'Email Templates: Customize banking details emails',
-      'Workflow Configuration: View and edit your workflow',
-      'Team Members: Add users to your workspace',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'voice-commands',
-    title: 'Voice Commands',
-    description: 'Control TraceCore AI with your voice',
-    details: [
-      'Click the microphone icon to start voice command',
-      'Say commands like "Add new product" or "Show orders"',
-      'Commands are executed in real-time',
-      'Perfect for hands-free operation while working',
-    ],
-    icon: Sparkles,
-  },
-  {
-    id: 'getting-started',
-    title: 'Getting Started',
-    description: 'Your first steps in TraceCore AI',
-    details: [
-      '1. Add your first product/supplier',
-      '2. Create your first order',
-      '3. Set up your workflow stages',
-      '4. Configure your AI preferences',
-    ],
-    icon: Sparkles,
-  },
-];
 
 interface OnboardingTourProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onStageEditorOpen?: (open: boolean) => void;
+  steps: TourStep[];
+  isOpen: boolean;
+  onClose: () => void;
+  onComplete?: () => void;
 }
 
-export function OnboardingTour({ open, onOpenChange, onStageEditorOpen }: OnboardingTourProps) {
-  const { state } = useApp();
+export default function OnboardingTour({ steps, isOpen, onClose, onComplete }: OnboardingTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [showStageEditor, setShowStageEditor] = useState(false);
+  const [highlightElement, setHighlightElement] = useState<HTMLElement | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [elementFound, setElementFound] = useState(true);
 
-  const step = TOUR_STEPS[currentStep];
-  const Icon = step.icon;
+  const step = steps[currentStep];
+  const isLastStep = currentStep === steps.length - 1;
+  const isFirstStep = currentStep === 0;
 
-  const getStepDetails = (details: string[]) => {
-    return details.map(detail =>
-      detail
-        .replace('{{businessName}}', state.workspace.name || 'Your Business')
-        .replace('{{workflowType}}', state.workspace.businessType || 'custom')
-        .replace('{{currency}}', state.workspace.currency || 'ZAR')
-        .replace('{{region}}', state.workspace.region || 'South Africa')
-    );
+  useEffect(() => {
+    if (!isOpen) {
+      setHighlightElement(null);
+      return;
+    }
+
+    if (!step.target) {
+      setElementFound(true);
+      setHighlightElement(null);
+      return;
+    }
+
+    try {
+      const element = document.querySelector(step.target) as HTMLElement;
+      if (element) {
+        setHighlightElement(element);
+        setElementFound(true);
+        updateTooltipPosition(element);
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // Element not found, but don't crash - just show the tooltip without highlight
+        setHighlightElement(null);
+        setElementFound(false);
+        setTooltipPosition({ top: 100, left: 50 });
+      }
+    } catch (error) {
+      // Invalid selector or other error - gracefully handle
+      console.warn(`Tour step selector error: ${step.target}`, error);
+      setHighlightElement(null);
+      setElementFound(false);
+      setTooltipPosition({ top: 100, left: 50 });
+    }
+  }, [currentStep, isOpen, step.target]);
+
+  const updateTooltipPosition = (element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const position = step.position || 'bottom';
+
+    let top = rect.top;
+    let left = rect.left;
+
+    switch (position) {
+      case 'bottom':
+        top = rect.bottom + 20;
+        left = rect.left + rect.width / 2 - 150;
+        break;
+      case 'top':
+        top = rect.top - 20;
+        left = rect.left + rect.width / 2 - 150;
+        break;
+      case 'left':
+        top = rect.top + rect.height / 2 - 60;
+        left = rect.left - 320;
+        break;
+      case 'right':
+        top = rect.top + rect.height / 2 - 60;
+        left = rect.right + 20;
+        break;
+    }
+
+    setTooltipPosition({ top: Math.max(10, top), left: Math.max(10, left) });
   };
 
   const handleNext = () => {
-    if (currentStep < TOUR_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (step.action) {
+      step.action();
+    }
+    if (isLastStep) {
+      handleComplete();
     } else {
-      // Tour complete
-      onOpenChange(false);
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const handlePrev = () => {
+  const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleCustomizeStages = () => {
-    setShowStageEditor(true);
-    if (onStageEditorOpen) {
-      onStageEditorOpen(true);
-    }
+  const handleComplete = () => {
+    onClose();
+    onComplete?.();
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Icon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <DialogTitle>{step.title}</DialogTitle>
-                <DialogDescription>{step.description}</DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+      {/* Overlay */}
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
 
-          <div className="py-6 space-y-4">
-            {/* Step indicator */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${((currentStep + 1) / TOUR_STEPS.length) * 100}%` }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">
-                {currentStep + 1} / {TOUR_STEPS.length}
-              </span>
-            </div>
-
-            {/* Step details */}
-            <div className="space-y-3">
-              {getStepDetails(step.details).map((detail, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 text-xs font-semibold">
-                    {idx + 1}
-                  </div>
-                  <p className="text-sm text-foreground pt-0.5">{detail}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Special action for customize stages step */}
-            {step.id === 'customize-stages' && (
-              <Button
-                onClick={handleCustomizeStages}
-                variant="outline"
-                className="w-full"
-              >
-                Open Workflow Stage Editor
-              </Button>
-            )}
-          </div>
-
-          <DialogFooter className="flex items-center justify-between">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handlePrev}
-                disabled={currentStep === 0}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              {currentStep === TOUR_STEPS.length - 1 ? (
-                <Button
-                  onClick={() => onOpenChange(false)}
-                  className="gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Complete Tour
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Skip Tour
-                  </Button>
-                  <Button onClick={handleNext} className="gap-2">
-                    Next
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Workflow Stage Editor Modal */}
-      {showStageEditor && (
-        <WorkflowStageEditor
-          open={showStageEditor}
-          onOpenChange={(isOpen) => {
-            setShowStageEditor(isOpen);
-            if (!isOpen && onStageEditorOpen) {
-              onStageEditorOpen(false);
-            }
+      {/* Highlight Box */}
+      {highlightElement && (
+        <div
+          className="fixed z-40 border-2 border-blue-500 rounded-lg pointer-events-none"
+          style={{
+            top: highlightElement.getBoundingClientRect().top - 4,
+            left: highlightElement.getBoundingClientRect().left - 4,
+            width: highlightElement.getBoundingClientRect().width + 8,
+            height: highlightElement.getBoundingClientRect().height + 8,
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
           }}
         />
       )}
+
+      {/* Tooltip */}
+      <div
+        className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-6 max-w-sm"
+        style={{
+          top: `${tooltipPosition.top}px`,
+          left: `${tooltipPosition.left}px`,
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h3 className="font-semibold text-foreground text-lg">{step.title}</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Step {currentStep + 1} of {steps.length}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Description */}
+        <p className="text-sm text-foreground mb-4">{step.description}</p>
+
+        {/* Element Not Found Warning */}
+        {!elementFound && step.target && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-4">
+            <p className="text-xs text-yellow-600">
+              💡 Couldn't find the element on this page. Continue to the next step.
+            </p>
+          </div>
+        )}
+
+        {/* Progress Bar */}
+        <div className="w-full bg-muted rounded-full h-1 mb-4">
+          <div
+            className="bg-blue-500 h-1 rounded-full transition-all"
+            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrevious}
+            disabled={isFirstStep}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <button
+            onClick={onClose}
+            className="flex-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Skip
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-500 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+          >
+            {isLastStep ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Done
+              </>
+            ) : (
+              <>
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </>
   );
 }
