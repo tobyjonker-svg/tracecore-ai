@@ -15,6 +15,13 @@
       "when": 1774604219292,
       "tag": "0001_goofy_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774724420471,
+      "tag": "0002_light_triton",
+      "breakpoints": true
     }
   ]
 }

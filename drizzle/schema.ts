@@ -105,3 +105,34 @@ export const woocommerceIntegrations = mysqlTable("woocommerceIntegrations", {
 
 export type WoocommerceIntegration = typeof woocommerceIntegrations.$inferSelect;
 export type InsertWoocommerceIntegration = typeof woocommerceIntegrations.$inferInsert;
+
+
+// Workflow Stages - store user's custom workflow configuration
+export const workflowStages = mysqlTable("workflowStages", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  stageOrder: int("stageOrder").notNull(), // 1, 2, 3, etc.
+  name: varchar("name", { length: 255 }).notNull(),
+  icon: varchar("icon", { length: 10 }).notNull(), // emoji
+  color: varchar("color", { length: 50 }).notNull(), // bg-color class
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WorkflowStage = typeof workflowStages.$inferSelect;
+export type InsertWorkflowStage = typeof workflowStages.$inferInsert;
+
+// Workflow Analytics - track template usage and customizations
+export const workflowAnalytics = mysqlTable("workflowAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId"),
+  templateUsed: varchar("templateUsed", { length: 100 }), // Manufacturing, Retail, Service, etc.
+  customizationCount: int("customizationCount").default(0).notNull(), // How many stages were customized
+  stagesCount: int("stagesCount").notNull(), // Total number of stages
+  source: varchar("source", { length: 50 }).default("landing").notNull(), // landing, settings, etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WorkflowAnalytics = typeof workflowAnalytics.$inferSelect;
+export type InsertWorkflowAnalytics = typeof workflowAnalytics.$inferInsert;

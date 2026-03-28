@@ -268,3 +268,156 @@ export async function getWorkspaceWithPayments(workspaceId: number) {
     throw error;
   }
 }
+
+
+// ──────────────────────────────────────────────────────────────
+// Workflow Queries
+// ──────────────────────────────────────────────────────────────
+
+import { workflowStages, workflowAnalytics } from "../drizzle/schema";
+import { avg, count } from "drizzle-orm";
+
+/**
+ * Get all workflow stages for a workspace
+ */
+export async function getWorkflowStages(workspaceId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get workflow stages: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(workflowStages)
+      .where(eq(workflowStages.workspaceId, workspaceId))
+      .orderBy(workflowStages.stageOrder);
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get workflow stages:", error);
+    throw error;
+  }
+}
+
+/**
+ * Save workflow stages for a workspace
+ */
+export async function saveWorkflowStages(
+  workspaceId: number,
+  stages: Array<{ name: string; icon: string; color: string }>
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot save workflow stages: database not available");
+    return [];
+  }
+
+  try {
+    // Delete existing stages
+    await db.delete(workflowStages).where(eq(workflowStages.workspaceId, workspaceId));
+
+    // Insert new stages
+    if (stages.length > 0) {
+      await db.insert(workflowStages).values(
+        stages.map((stage, idx) => ({
+          workspaceId,
+          stageOrder: idx + 1,
+          name: stage.name,
+          icon: stage.icon,
+          color: stage.color,
+        }))
+      );
+    }
+
+    return getWorkflowStages(workspaceId);
+  } catch (error) {
+    console.error("[Database] Failed to save workflow stages:", error);
+    throw error;
+  }
+}
+
+/**
+ * Track workflow analytics event
+ */
+export async function trackWorkflowAnalytics(
+  workspaceId: number | undefined,
+  templateUsed: string,
+  customizationCount: number,
+  stagesCount: number,
+  source: string = 'landing'
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot track workflow analytics: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(workflowAnalytics).values({
+      workspaceId: workspaceId || undefined,
+      templateUsed,
+      customizationCount,
+      stagesCount,
+      source,
+    });
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to track workflow analytics:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get workflow analytics events
+ */
+export async function getWorkflowAnalytics(limit: number = 100) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get workflow analytics: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(workflowAnalytics)
+      .orderBy(desc(workflowAnalytics.createdAt))
+      .limit(limit);
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get workflow analytics:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get workflow analytics summary by template
+ */
+export async function getWorkflowAnalyticsSummary() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get workflow analytics summary: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select({
+        template: workflowAnalytics.templateUsed,
+        count: count(workflowAnalytics.id).as('count'),
+        avgCustomizations: avg(workflowAnalytics.customizationCount).as('avgCustomizations'),
+        avgStages: avg(workflowAnalytics.stagesCount).as('avgStages'),
+      })
+      .from(workflowAnalytics)
+      .groupBy(workflowAnalytics.templateUsed);
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get workflow analytics summary:", error);
+    throw error;
+  }
+}

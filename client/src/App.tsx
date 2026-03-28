@@ -25,6 +25,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
 import AdminPaymentDashboard from "./pages/AdminPaymentDashboard";
+import WorkflowAnalytics from "./pages/WorkflowAnalytics";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
@@ -52,6 +53,7 @@ function DashboardRouter() {
         <Route path="/settings" component={Settings} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/admin/payments" component={AdminPaymentDashboard} />
+        <Route path="/admin/analytics" component={WorkflowAnalytics} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>

@@ -68,6 +68,61 @@ const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       { name: 'Delivery', icon: '🚚', color: 'bg-red-500' },
     ],
   },
+  {
+    name: 'E-Commerce',
+    description: 'For online stores and digital sellers',
+    stages: [
+      { name: 'Product Sourcing', icon: '🔍', color: 'bg-blue-500' },
+      { name: 'Inventory', icon: '📦', color: 'bg-purple-500' },
+      { name: 'Listings', icon: '📝', color: 'bg-orange-500' },
+      { name: 'Orders', icon: '🛍️', color: 'bg-green-500' },
+      { name: 'Shipping', icon: '🚚', color: 'bg-red-500' },
+    ],
+  },
+  {
+    name: 'SaaS/Tech',
+    description: 'For software and tech companies',
+    stages: [
+      { name: 'Leads', icon: '📞', color: 'bg-blue-500' },
+      { name: 'Trials', icon: '🧪', color: 'bg-purple-500' },
+      { name: 'Onboarding', icon: '🚀', color: 'bg-orange-500' },
+      { name: 'Active Users', icon: '👥', color: 'bg-green-500' },
+      { name: 'Support', icon: '💬', color: 'bg-red-500' },
+    ],
+  },
+  {
+    name: 'Real Estate',
+    description: 'For real estate agents and brokers',
+    stages: [
+      { name: 'Listings', icon: '🏠', color: 'bg-blue-500' },
+      { name: 'Showings', icon: '👁️', color: 'bg-purple-500' },
+      { name: 'Offers', icon: '💰', color: 'bg-orange-500' },
+      { name: 'Inspection', icon: '🔍', color: 'bg-green-500' },
+      { name: 'Closing', icon: '✅', color: 'bg-red-500' },
+    ],
+  },
+  {
+    name: 'Food & Beverage',
+    description: 'For restaurants, cafes, and food businesses',
+    stages: [
+      { name: 'Suppliers', icon: '🚚', color: 'bg-blue-500' },
+      { name: 'Inventory', icon: '🥘', color: 'bg-purple-500' },
+      { name: 'Preparation', icon: '👨‍🍳', color: 'bg-orange-500' },
+      { name: 'Orders', icon: '📋', color: 'bg-green-500' },
+      { name: 'Delivery', icon: '🛵', color: 'bg-red-500' },
+    ],
+  },
+  {
+    name: 'Logistics',
+    description: 'For shipping, logistics, and courier services',
+    stages: [
+      { name: 'Pickup', icon: '📍', color: 'bg-blue-500' },
+      { name: 'Sorting', icon: '🗂️', color: 'bg-purple-500' },
+      { name: 'In Transit', icon: '🚚', color: 'bg-orange-500' },
+      { name: 'Out for Delivery', icon: '📦', color: 'bg-green-500' },
+      { name: 'Delivered', icon: '✅', color: 'bg-red-500' },
+    ],
+  },
 ];
 
 const ICON_OPTIONS = ['🏭', '📦', '⚙️', '📊', '🚚', '🏪', '💳', '💰', '📞', '📄', '✍️', '⭐', '✅', '🛒', '🏢', '🚛', '⚡', '🎯', '📈', '🔧'];
