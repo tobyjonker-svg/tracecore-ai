@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO workspaces (userId, name, businessType, workflowTemplate, workflowStages, tier, currency, region, language) VALUES (2, 'Test Business', 'Retail', 'Retail', '[{\"id\": \"1\", \"name\": \"Suppliers\", \"icon\": \"🏪\", \"color\": \"#ec4899\"}, {\"id\": \"2\", \"name\": \"Products\", \"icon\": \"📦\", \"color\": \"#06b6d4\"}, {\"id\": \"3\", \"name\": \"Orders\", \"icon\": \"🛒\", \"color\": \"#f59e0b\"}, {\"id\": \"4\", \"name\": \"Inventory\", \"icon\": \"📊\", \"color\": \"#8b5cf6\"}]', 'free', 'ZAR', 'South Africa', 'en');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute INSERT INTO workspaces (userId, name, businessType, workflowTemplate, workflowStages, tier, currency, region, language) VALUES (2, 'Test Business', 'Retail', 'Retail', '[{\"id\": \"1\", \"name\": \"Suppliers\", \"icon\": \"🏪\", \"color\": \"#ec4899\"}, {\"id\": \"2\", \"name\": \"Products\", \"icon\": \"📦\", \"color\": \"#06b6d4\"}, {\"id\": \"3\", \"name\": \"Orders\", \"icon\": \"🛒\", \"color\": \"#f59e0b\"}, {\"id\": \"4\", \"name\": \"Inventory\", \"icon\": \"📊\", \"color\": \"#8b5cf6\"}]', 'free', 'ZAR', 'South Africa', 'en');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 461
+}
