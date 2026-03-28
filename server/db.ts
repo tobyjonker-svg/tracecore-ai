@@ -1,11 +1,12 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, InsertProduct, products, InsertInventoryActivity, inventoryActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
+
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -420,4 +421,76 @@ export async function getWorkflowAnalyticsSummary() {
     console.error("[Database] Failed to get workflow analytics summary:", error);
     throw error;
   }
+}
+
+// Products - cost and margin tracking
+export async function createProduct(data: InsertProduct) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(products).values(data);
+  return result;
+}
+
+export async function getProductsByWorkspace(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(products).where(eq(products.workspaceId, workspaceId));
+}
+
+export async function getProductById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(products).where(eq(products.id, id)).limit(1);
+}
+
+export async function updateProduct(id: number, data: Partial<InsertProduct>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(products).set(data).where(eq(products.id, id));
+}
+
+export async function deleteProduct(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(products).where(eq(products.id, id));
+}
+
+// Inventory Activity - track cost and margin
+export async function recordInventoryActivity(data: InsertInventoryActivity) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(inventoryActivity).values(data);
+  return result;
+}
+
+export async function getInventoryByWorkspace(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(inventoryActivity).where(eq(inventoryActivity.workspaceId, workspaceId));
+}
+
+export async function getInventoryByProduct(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(inventoryActivity).where(eq(inventoryActivity.productId, productId));
+}
+
+// Calculate inventory valuation
+export async function getInventoryValuation(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const prods = await db.select().from(products).where(eq(products.workspaceId, workspaceId));
+  
+  return prods.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    sku: p.sku,
+    currentStock: p.currentStock,
+    costPerUnit: parseFloat(p.costPerUnit.toString()),
+    sellingPrice: parseFloat(p.sellingPrice.toString()),
+    totalCostValue: p.currentStock * parseFloat(p.costPerUnit.toString()),
+    totalSellingValue: p.currentStock * parseFloat(p.sellingPrice.toString()),
+    profitPerUnit: parseFloat(p.sellingPrice.toString()) - parseFloat(p.costPerUnit.toString()),
+    profitMarginPercent: ((parseFloat(p.sellingPrice.toString()) - parseFloat(p.costPerUnit.toString())) / parseFloat(p.sellingPrice.toString()) * 100).toFixed(2),
+  }));
 }

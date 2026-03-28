@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -136,3 +136,61 @@ export const workflowAnalytics = mysqlTable("workflowAnalytics", {
 
 export type WorkflowAnalytics = typeof workflowAnalytics.$inferSelect;
 export type InsertWorkflowAnalytics = typeof workflowAnalytics.$inferInsert;
+
+
+// Products - track items with cost and selling prices
+export const products = mysqlTable("products", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  sku: varchar("sku", { length: 100 }),
+  costPerUnit: decimal("costPerUnit", { precision: 10, scale: 2 }).notNull(), // Purchase cost from supplier
+  sellingPrice: decimal("sellingPrice", { precision: 10, scale: 2 }).notNull(), // Retail/selling price
+  currentStock: int("currentStock").default(0).notNull(),
+  lowStockThreshold: int("lowStockThreshold").default(10),
+  unit: varchar("unit", { length: 50 }).default("units"), // units, kg, liters, etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+// Suppliers - track where products are sourced from
+export const suppliers = mysqlTable("suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  country: varchar("country", { length: 100 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = typeof suppliers.$inferInsert;
+
+// Inventory Activity - track all stock movements with cost tracking
+export const inventoryActivity = mysqlTable("inventoryActivity", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  productId: int("productId").notNull(),
+  type: mysqlEnum("type", ["purchase", "sale", "adjustment", "production", "return"]).notNull(),
+  quantity: int("quantity").notNull(),
+  costPerUnit: decimal("costPerUnit", { precision: 10, scale: 2 }), // Cost at time of transaction
+  sellingPrice: decimal("sellingPrice", { precision: 10, scale: 2 }), // Selling price at time of transaction
+  totalCost: decimal("totalCost", { precision: 12, scale: 2 }), // quantity * costPerUnit
+  totalValue: decimal("totalValue", { precision: 12, scale: 2 }), // quantity * sellingPrice
+  supplierId: int("supplierId"), // For purchase transactions
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InventoryActivity = typeof inventoryActivity.$inferSelect;
+export type InsertInventoryActivity = typeof inventoryActivity.$inferInsert;

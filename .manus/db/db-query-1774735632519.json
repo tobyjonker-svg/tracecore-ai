@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE workspaces SET name = 'Micro Alchemy' WHERE name = 'Maninki Toys';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute UPDATE workspaces SET name = 'Micro Alchemy' WHERE name = 'Maninki Toys';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 351
+}

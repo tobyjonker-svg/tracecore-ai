@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM workspaces WHERE name IN ('maninki 3D', 'Maninki 3D', 'MycoAlchemy', 'Mushroom Extracts', 'Test Business');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute DELETE FROM workspaces WHERE name IN ('maninki 3D', 'Maninki 3D', 'MycoAlchemy', 'Mushroom Extracts', 'Test Business');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 451
+}
