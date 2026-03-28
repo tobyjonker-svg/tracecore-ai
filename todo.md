@@ -159,3 +159,37 @@
 - [x] Add refresh button for real-time updates
 - [x] Integrated analytics link into sidebar (admin only)
 - [x] All 90 tests passing (24 workflow + 9 payment + 23 builder + 11 email + 22 payment router + 1 auth)
+
+
+## Phase 21: Redesign Free Trial Signup Flow
+- [ ] Review current signup/trial pages
+- [ ] Remove "Danger Zone" section from trial page
+- [ ] Replace with workflow template gallery (Step 1)
+- [ ] Build template picker with customization
+- [ ] Create business details form (Step 2)
+- [ ] Add currency selection (ZAR + others)
+- [ ] Add region/country selection
+- [ ] Add language selection
+- [ ] Create multi-step form navigation
+- [ ] Add form state management
+- [ ] Implement multi-language support (i18n)
+- [ ] Test complete signup flow end-to-end
+
+
+## Phase 21: Redesign Free Trial Signup Flow
+- [x] Review current signup/trial pages
+- [x] Create new SignupFlow multi-step page (replaces /settings redirect)
+- [x] Step 1: Workflow template gallery with 10 templates
+- [x] Step 1: Workflow customization with WorkflowBuilder
+- [x] Step 2: Business details form (business name, currency, region, language)
+- [x] Step 2: Currency selection (10 currencies including ZAR, USD, EUR, etc.)
+- [x] Step 2: Region/country selection (11 regions including African countries)
+- [x] Step 2: Language selection (10 languages including South African languages)
+- [x] Step 3: Account creation (email, password, confirmation)
+- [x] Multi-step form navigation (Back/Next buttons with validation)
+- [x] Form state management (persist data across all steps)
+- [x] Progress indicator showing current step
+- [x] Summary cards showing selected configuration
+- [x] Landing page buttons now point to /signup
+- [x] Created 35 comprehensive SignupFlow tests
+- [x] All 125 tests passing
