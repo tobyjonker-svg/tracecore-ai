@@ -159,3 +159,15 @@
 - [x] Add refresh button for real-time updates
 - [x] Integrated analytics link into sidebar (admin only)
 - [x] All 90 tests passing (24 workflow + 9 payment + 23 builder + 11 email + 22 payment router + 1 auth)
+
+
+## Phase 21: Cost & Margin Tracking System
+- [x] Create tRPC products router with CRUD procedures (createProduct, updateProduct, getProducts, deleteProduct)
+- [x] Build products management UI page at /app/products with form for adding/editing products
+- [x] Implement real-time profit margin calculations in products form
+- [x] Create profit margin reporting dashboard showing inventory value, selling value, and margin %
+- [x] Write comprehensive tests for products router and margin calculations (23 tests passing)
+- [x] Verify admin payment analytics is accessible from sidebar
+- [x] Add Profit Margin Report page with CSV export
+- [x] Integrate products router into main tRPC router
+- [x] Add Products and Profit Margin links to sidebar navigation

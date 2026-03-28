@@ -26,6 +26,7 @@ import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
 import AdminPaymentDashboard from "./pages/AdminPaymentDashboard";
 import WorkflowAnalytics from "./pages/WorkflowAnalytics";
+import ProfitMarginReport from "./pages/ProfitMarginReport";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
@@ -50,6 +51,7 @@ function DashboardRouter() {
         <Route path="/production" component={ProductionRuns} />
         <Route path="/inventory" component={InventoryActivity} />
         <Route path="/reports" component={Reports} />
+        <Route path="/profit-margin" component={ProfitMarginReport} />
         <Route path="/settings" component={Settings} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/admin/payments" component={AdminPaymentDashboard} />

@@ -1,315 +1,519 @@
 /**
- * TraceCore AI — Products Page
- * Design: Soft-Dark Enterprise
- * - Product cards with stock bars and LOW STOCK badges
- * - Inline stock and threshold editing
+ * Products Management Page
+ * Add, edit, and manage products with cost per unit, selling price, and profit margin tracking
  */
 
 import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { formatDate } from '@/lib/store';
-import { Package, Plus, Trash2, Pencil, Check, X, AlertTriangle, TrendingUp, HelpCircle } from 'lucide-react';
-import OnboardingTour from '@/components/OnboardingTour';
-import { PRODUCTS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Edit2, Trash2, TrendingUp, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+interface ProductForm {
+  name: string;
+  description: string;
+  sku: string;
+  costPerUnit: string;
+  sellingPrice: string;
+  currentStock: string;
+  lowStockThreshold: string;
+  unit: string;
+}
+
+const INITIAL_FORM: ProductForm = {
+  name: '',
+  description: '',
+  sku: '',
+  costPerUnit: '',
+  sellingPrice: '',
+  currentStock: '0',
+  lowStockThreshold: '10',
+  unit: 'units',
+};
+
 export default function Products() {
-  const { state, dispatch } = useApp();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [stockOnHand, setStockOnHand] = useState('0');
-  const [lowStockThreshold, setLowStockThreshold] = useState('10');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editStock, setEditStock] = useState('');
-  const [editThreshold, setEditThreshold] = useState('');
-  const [isTourOpen, setIsTourOpen] = useState(false);
-  const onboardingState = getOnboardingState();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [form, setForm] = useState<ProductForm>(INITIAL_FORM);
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) { toast.error('Product name is required'); return; }
-    dispatch({
-      type: 'ADD_PRODUCT',
-      payload: {
-        name: name.trim(),
-        description: description.trim(),
-        stockOnHand: parseInt(stockOnHand) || 0,
-        lowStockThreshold: parseInt(lowStockThreshold) || 10,
-      },
-    });
-    setName(''); setDescription(''); setStockOnHand('0'); setLowStockThreshold('10');
-    toast.success(`Product "${name.trim()}" added`);
+  // Queries and mutations
+  const { data: products, isLoading, refetch } = trpc.products.list.useQuery();
+  const { data: valuation } = trpc.products.getValuation.useQuery();
+  const createMutation = trpc.products.create.useMutation();
+  const updateMutation = trpc.products.update.useMutation();
+  const deleteMutation = trpc.products.delete.useMutation();
+
+  // Calculate profit margin
+  const costPerUnit = parseFloat(form.costPerUnit) || 0;
+  const sellingPrice = parseFloat(form.sellingPrice) || 0;
+  const profitPerUnit = sellingPrice - costPerUnit;
+  const profitMarginPercent =
+    sellingPrice > 0 ? ((profitPerUnit / sellingPrice) * 100).toFixed(2) : '0.00';
+
+  const handleOpenDialog = (product?: any) => {
+    if (product) {
+      setIsEditing(true);
+      setEditingId(product.id);
+      setForm({
+        name: product.name,
+        description: product.description || '',
+        sku: product.sku || '',
+        costPerUnit: product.costPerUnit.toString(),
+        sellingPrice: product.sellingPrice.toString(),
+        currentStock: product.currentStock.toString(),
+        lowStockThreshold: product.lowStockThreshold?.toString() || '10',
+        unit: product.unit || 'units',
+      });
+    } else {
+      setIsEditing(false);
+      setEditingId(null);
+      setForm(INITIAL_FORM);
+    }
+    setIsOpen(true);
   };
 
-  const handleSaveEdit = (id: string, productName: string) => {
-    dispatch({
-      type: 'UPDATE_PRODUCT',
-      payload: {
-        id,
-        stockOnHand: parseInt(editStock) || 0,
-        lowStockThreshold: parseInt(editThreshold) || 10,
-      },
-    });
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    setForm(INITIAL_FORM);
+    setIsEditing(false);
     setEditingId(null);
-    toast.success(`${productName} updated`);
   };
 
-  const lowStockCount = state.products.filter(p => p.stockOnHand <= p.lowStockThreshold).length;
+  const handleSubmit = async () => {
+    // Validation
+    if (!form.name.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+    if (!form.costPerUnit || parseFloat(form.costPerUnit) <= 0) {
+      toast.error('Cost per unit must be greater than 0');
+      return;
+    }
+    if (!form.sellingPrice || parseFloat(form.sellingPrice) <= 0) {
+      toast.error('Selling price must be greater than 0');
+      return;
+    }
+
+    try {
+      if (isEditing && editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          data: {
+            name: form.name,
+            description: form.description || undefined,
+            sku: form.sku || undefined,
+            costPerUnit: parseFloat(form.costPerUnit),
+            sellingPrice: parseFloat(form.sellingPrice),
+            currentStock: parseInt(form.currentStock) || 0,
+            lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+            unit: form.unit,
+          },
+        });
+        toast.success('Product updated successfully');
+      } else {
+        await createMutation.mutateAsync({
+          name: form.name,
+          description: form.description || undefined,
+          sku: form.sku || undefined,
+          costPerUnit: parseFloat(form.costPerUnit),
+          sellingPrice: parseFloat(form.sellingPrice),
+          currentStock: parseInt(form.currentStock) || 0,
+          lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+          unit: form.unit,
+        });
+        toast.success('Product created successfully');
+      }
+      handleCloseDialog();
+      refetch();
+    } catch (error) {
+      toast.error(isEditing ? 'Failed to update product' : 'Failed to create product');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteMutation.mutateAsync({ id: deleteId });
+      toast.success('Product deleted successfully');
+      setDeleteId(null);
+      refetch();
+    } catch (error) {
+      toast.error('Failed to delete product');
+    }
+  };
+
+  const summary = valuation?.summary;
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Products</h1>
-          <p className="text-muted-foreground text-xs md:text-sm mt-0.5">
-            Finished goods ready for sale. Manage stock levels and thresholds.
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <Package className="w-8 h-8 text-primary" />
+            Products & Inventory
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your products with cost tracking and profit margin calculations
           </p>
-          {!onboardingState.completedSteps.includes('products') && (
-            <button
-              onClick={() => setIsTourOpen(true)}
-              className="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Tour
-            </button>
-          )}
         </div>
-        {lowStockCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs md:text-sm">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-            <span className="text-red-400 font-medium">
-              {lowStockCount} product{lowStockCount > 1 ? 's' : ''} low on stock
-            </span>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button
+              onClick={() => handleOpenDialog()}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {isEditing ? 'Edit Product' : 'Add New Product'}
+              </DialogTitle>
+              <DialogDescription>
+                {isEditing
+                  ? 'Update product details and pricing'
+                  : 'Create a new product with cost and selling price'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Product Name *</label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm({ ...form, name: e.target.value })
+                    }
+                    placeholder="e.g., Organic Coffee Beans"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">SKU</label>
+                  <Input
+                    value={form.sku}
+                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                    placeholder="e.g., SKU-001"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  placeholder="Product details and specifications"
+                  rows={3}
+                />
+              </div>
+
+              {/* Pricing */}
+              <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                <h3 className="font-semibold text-sm">Pricing & Margins</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Cost Per Unit *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.costPerUnit}
+                      onChange={(e) =>
+                        setForm({ ...form, costPerUnit: e.target.value })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Selling Price *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.sellingPrice}
+                      onChange={(e) =>
+                        setForm({ ...form, sellingPrice: e.target.value })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Margin Preview */}
+                {costPerUnit > 0 && sellingPrice > 0 && (
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t">
+                    <div className="bg-background p-3 rounded">
+                      <p className="text-xs text-muted-foreground">Profit/Unit</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {profitPerUnit.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-background p-3 rounded">
+                      <p className="text-xs text-muted-foreground">Margin %</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {profitMarginPercent}%
+                      </p>
+                    </div>
+                    <div className="bg-background p-3 rounded">
+                      <p className="text-xs text-muted-foreground">Markup</p>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {costPerUnit > 0
+                          ? ((sellingPrice / costPerUnit - 1) * 100).toFixed(1)
+                          : '0'}
+                        %
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Inventory */}
+              <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                <h3 className="font-semibold text-sm">Inventory</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Current Stock</label>
+                    <Input
+                      type="number"
+                      value={form.currentStock}
+                      onChange={(e) =>
+                        setForm({ ...form, currentStock: e.target.value })
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Low Stock Alert</label>
+                    <Input
+                      type="number"
+                      value={form.lowStockThreshold}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          lowStockThreshold: e.target.value,
+                        })
+                      }
+                      placeholder="10"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Unit</label>
+                    <Input
+                      value={form.unit}
+                      onChange={(e) =>
+                        setForm({ ...form, unit: e.target.value })
+                      }
+                      placeholder="units"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseDialog}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                >
+                  {isEditing ? 'Update Product' : 'Create Product'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Cost Value</p>
+            <p className="text-2xl font-bold text-foreground mt-1">
+              R{summary.totalCostValue.toFixed(2)}
+            </p>
           </div>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Selling Value</p>
+            <p className="text-2xl font-bold text-foreground mt-1">
+              R{summary.totalSellingValue.toFixed(2)}
+            </p>
+          </div>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Profit Potential</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">
+              R{summary.totalProfitPotential.toFixed(2)}
+            </p>
+          </div>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Overall Margin</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">
+              {summary.overallMarginPercent}%
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Products Table */}
+      <div className="bg-card border rounded-lg overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground">
+            Loading products...
+          </div>
+        ) : !products || products.length === 0 ? (
+          <div className="p-8 text-center">
+            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-muted-foreground">No products yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Add your first product to start tracking costs and margins
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead className="text-right">Cost/Unit</TableHead>
+                <TableHead className="text-right">Selling Price</TableHead>
+                <TableHead className="text-right">Profit/Unit</TableHead>
+                <TableHead className="text-right">Margin %</TableHead>
+                <TableHead className="text-right">Stock</TableHead>
+                <TableHead className="text-right">Total Value</TableHead>
+                <TableHead className="w-20">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product: any) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      {product.sku && (
+                        <p className="text-xs text-muted-foreground">
+                          {product.sku}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R{product.costPerUnit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R{product.sellingPrice.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600 font-medium">
+                      R{product.profitPerUnit.toFixed(2)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600 font-medium">
+                      {product.profitMarginPercent}%
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span
+                      className={cn(
+                        'font-medium',
+                        product.currentStock <
+                          (product.lowStockThreshold || 10)
+                          ? 'text-red-600'
+                          : 'text-foreground'
+                      )}
+                    >
+                      {product.currentStock} {product.unit}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R{product.totalSellingValue.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenDialog(product)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(product.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Add Product Form */}
-        <div className="lg:col-span-1">
-          <div className="tc-card sticky top-6">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-primary" />
-              </div>
-              <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Add Product</h2>
-            </div>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="product-name" className="text-xs text-muted-foreground uppercase tracking-wide">Product Name *</Label>
-                <Input
-                  id="product-name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="e.g. Lion's Mane Tincture 100ml"
-                  className="bg-muted/50 border-border focus:border-primary/50"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="product-description" className="text-xs text-muted-foreground uppercase tracking-wide">Description</Label>
-                <Textarea
-                  id="product-description"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Brief product description..."
-                  className="bg-muted/50 border-border focus:border-primary/50 resize-none"
-                  rows={2}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="initial-stock" className="text-xs text-muted-foreground uppercase tracking-wide">Initial Stock</Label>
-                  <Input
-                    id="initial-stock"
-                    type="number"
-                    value={stockOnHand}
-                    onChange={e => setStockOnHand(e.target.value)}
-                    min="0"
-                    className="bg-muted/50 border-border focus:border-primary/50"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="low-stock-alert" className="text-xs text-muted-foreground uppercase tracking-wide">Low Stock Alert</Label>
-                  <Input
-                    id="low-stock-alert"
-                    type="number"
-                    value={lowStockThreshold}
-                    onChange={e => setLowStockThreshold(e.target.value)}
-                    min="0"
-                    className="bg-muted/50 border-border focus:border-primary/50"
-                  />
-                </div>
-              </div>
-              <Button id="add-product-btn" type="submit" className="w-full bg-primary hover:bg-primary/90">
-                Add Product
-              </Button>
-            </form>
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
           </div>
-        </div>
-
-        {/* Products Grid */}
-        <div className="lg:col-span-2">
-          {state.products.length === 0 ? (
-            <div className="tc-card text-center py-12">
-              <Package className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No products yet. Add your first product!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {state.products.map((product, i) => {
-                const isLow = product.stockOnHand <= product.lowStockThreshold;
-                const pct = Math.min(100, (product.stockOnHand / Math.max(product.lowStockThreshold * 3, 1)) * 100);
-                const isEditing = editingId === product.id;
-
-                return (
-                  <div
-                    key={product.id}
-                    className={cn(
-                      'tc-card relative card-enter',
-                      isLow && 'border-red-500/25'
-                    )}
-                    style={{ animationDelay: `${i * 60}ms` }}
-                  >
-                    {/* Low stock accent */}
-                    {isLow && (
-                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-red-500 to-red-400 rounded-t-xl" />
-                    )}
-
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <div className={cn(
-                          'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
-                          isLow ? 'bg-red-500/15' : 'bg-primary/15'
-                        )}>
-                          <Package className={cn('w-4.5 h-4.5', isLow ? 'text-red-400' : 'text-primary')} />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm font-['Plus_Jakarta_Sans'] leading-snug">
-                            {product.name}
-                          </h3>
-                          {isLow && (
-                            <span className="tc-badge-low-stock mt-1 inline-flex">
-                              <AlertTriangle className="w-2.5 h-2.5" />
-                              LOW STOCK
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditingId(product.id);
-                            setEditStock(String(product.stockOnHand));
-                            setEditThreshold(String(product.lowStockThreshold));
-                          }}
-                          className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => { dispatch({ type: 'DELETE_PRODUCT', payload: product.id }); toast.success('Product removed'); }}
-                          className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {product.description && (
-                      <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">
-                        {product.description}
-                      </p>
-                    )}
-
-                    {/* Stock display / edit */}
-                    {isEditing ? (
-                      <div className="space-y-2 mb-3">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Stock</Label>
-                            <Input
-                              type="number"
-                              value={editStock}
-                              onChange={e => setEditStock(e.target.value)}
-                              className="h-7 text-xs bg-muted/50 mt-1"
-                              autoFocus
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Alert at</Label>
-                            <Input
-                              type="number"
-                              value={editThreshold}
-                              onChange={e => setEditThreshold(e.target.value)}
-                              className="h-7 text-xs bg-muted/50 mt-1"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            className="flex-1 h-7 text-xs bg-primary hover:bg-primary/90"
-                            onClick={() => handleSaveEdit(product.id, product.name)}
-                          >
-                            <Check className="w-3 h-3 mr-1" /> Save
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => setEditingId(null)}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Stock on hand</span>
-                          <span className="text-sm font-bold font-mono text-foreground">
-                            {product.stockOnHand} units
-                          </span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full rounded-full transition-all duration-500',
-                              isLow ? 'bg-red-400' : pct > 60 ? 'bg-emerald-400' : 'bg-amber-400'
-                            )}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            Alert at {product.lowStockThreshold}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(product.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Onboarding Tour */}
-      <OnboardingTour
-        steps={PRODUCTS_TOUR_STEPS}
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-        onComplete={() => markTourComplete('products')}
-      />
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

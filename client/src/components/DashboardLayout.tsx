@@ -43,6 +43,7 @@ const NAV_ITEMS = [
   { href: '/production', label: 'Production Runs', icon: Factory },
   { href: '/inventory', label: 'Inventory Activity', icon: Activity },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
