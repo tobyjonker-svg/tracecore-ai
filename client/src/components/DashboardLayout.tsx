@@ -54,95 +54,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [navItems, setNavItems] = useState(ALL_NAV_ITEMS);
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
-  const { data: workspaces } = trpc.auth.getWorkspaces.useQuery(undefined, {
+  const { data: workspace } = trpc.auth.getWorkspace.useQuery(undefined, {
     enabled: !!user && isAuthenticated,
   });
-  
-  const [workspace, setWorkspace] = useState<any>(null);
 
   // Load user's workspace and update app context
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && user) {
-      // Try to load MycoAlchemy first, otherwise use first workspace
-      const activeWorkspaceId = localStorage.getItem('activeWorkspaceId');
-      let selectedWorkspace = workspaces[0];
-      
-      if (activeWorkspaceId) {
-        const found = workspaces.find(w => w.id === parseInt(activeWorkspaceId));
-        if (found) selectedWorkspace = found;
-      } else {
-        const mycoAlchemy = workspaces.find(w => w.name === 'MycoAlchemy');
-        if (mycoAlchemy) selectedWorkspace = mycoAlchemy;
-      }
-      
-      setWorkspace(selectedWorkspace);
-      localStorage.setItem('activeWorkspaceId', selectedWorkspace.id.toString());
-      
+    if (workspace && user) {
       // Update app context with user's workspace data
       dispatch({
         type: 'UPDATE_WORKSPACE',
         payload: {
-          id: selectedWorkspace.id.toString(),
-          name: selectedWorkspace.name || 'My Business',
-          businessType: (selectedWorkspace.businessType || 'Other') as any,
+          id: workspace.id.toString(),
+          name: workspace.name || 'My Business',
+          businessType: (workspace.businessType || 'Other') as any,
         },
       });
 
       // Build dynamic navigation based on workflow stages
-      if (selectedWorkspace && selectedWorkspace.workflowStages) {
-        let stages: any = selectedWorkspace.workflowStages;
+      if (workspace.workflowStages && Array.isArray(workspace.workflowStages)) {
+        const stageNames = workspace.workflowStages.map((s: any) => s.name);
         
-        // Handle if workflowStages is a string (JSON)
-        if (typeof stages === 'string') {
-          try {
-            stages = JSON.parse(stages);
-          } catch (e) {
-            console.error('Failed to parse workflowStages:', e);
-            stages = [];
-          }
-        }
+        // Filter nav items: keep core items + workflow-related items that match selected stages
+        const filtered = ALL_NAV_ITEMS.filter(item => {
+          if (item.isCore) return true; // Always show core items
+          
+          // Check if this nav item matches any workflow stage
+          return stageNames.some((stageName: any) => 
+            item.label.toLowerCase().includes(stageName.toLowerCase()) ||
+            stageName.toLowerCase().includes(item.label.toLowerCase())
+          );
+        });
         
-        // Ensure stages is an array
-        if (Array.isArray(stages) && stages.length > 0) {
-          const stageNames = stages.map((s: any) => s.name || s).filter(Boolean);
-          
-          // Map workflow stage names to navigation items
-          const stageToNavMap: { [key: string]: string[] } = {
-            'suppliers': ['Suppliers'],
-            'raw materials': ['Inputs'],
-            'production': ['Production Runs'],
-            'inventory': ['Inventory Activity'],
-            'purchasing': ['Orders'],
-            'sales': ['Orders'],
-            'fulfillment': ['Orders'],
-          };
-          
-          // Build set of nav labels to show
-          const navLabelsToShow = new Set<string>();
-          stageNames.forEach((stageName: any) => {
-            const normalized = stageName.toLowerCase();
-            if (stageToNavMap[normalized]) {
-              stageToNavMap[normalized].forEach(label => navLabelsToShow.add(label));
-            }
-          });
-          
-          // Filter nav items: keep core items + items that match workflow stages
-          const filtered = ALL_NAV_ITEMS.filter(item => {
-            if (item.isCore) return true; // Always show core items
-            return navLabelsToShow.has(item.label);
-          });
-          
-          setNavItems(filtered);
-        } else {
-          // No workflow stages, show only core items
-          setNavItems(ALL_NAV_ITEMS.filter(item => item.isCore));
-        }
-      } else {
-        // No workspace or no workflow stages, show only core items
-        setNavItems(ALL_NAV_ITEMS.filter(item => item.isCore));
+        setNavItems(filtered);
       }
     }
-  }, [workspaces, user, dispatch]);
+  }, [workspace, user, dispatch]);
 
   // Check if this is a new user flow
   useEffect(() => {

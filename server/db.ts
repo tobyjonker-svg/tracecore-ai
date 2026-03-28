@@ -543,15 +543,3 @@ export async function getWorkspaceByUserId(userId: number) {
     throw error;
   }
 }
-export async function getWorkspacesByUserId(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const result = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.userId, userId));
-  
-  return result;
-}
-

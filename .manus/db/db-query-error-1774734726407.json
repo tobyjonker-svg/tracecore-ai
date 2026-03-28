@@ -1,8 +1,0 @@
-{
-  "query": "INSERT INTO users (email, password, name, role, createdAt, updatedAt) VALUES ('test@tracecore.local', 'test_password_hashed', 'Test User', 'user', NOW(), NOW());",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute INSERT INTO users (email, password, name, role, createdAt, updatedAt) VALUES ('test@tracecore.local', 'test_password_hashed', 'Test User', 'user', NOW(), NOW());",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'password' in 'field list'"
-  ]
-}
