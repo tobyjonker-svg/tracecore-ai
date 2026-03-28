@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDate } from '@/lib/store';
 import { Package, Plus, Trash2, Pencil, Check, X, AlertTriangle, TrendingUp, HelpCircle } from 'lucide-react';
-import OnboardingTour from '@/components/OnboardingTour';
+import { OnboardingTour } from '@/components/OnboardingTour';
 import { PRODUCTS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -305,10 +305,8 @@ export default function Products() {
 
       {/* Onboarding Tour */}
       <OnboardingTour
-        steps={PRODUCTS_TOUR_STEPS}
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-        onComplete={() => markTourComplete('products')}
+        open={isTourOpen}
+        onOpenChange={setIsTourOpen}
       />
     </div>
   );

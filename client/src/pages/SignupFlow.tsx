@@ -21,6 +21,7 @@ import {
 import WorkflowBuilder from '@/components/WorkflowBuilder';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
+import { useApp } from '@/contexts/AppContext';
 
 interface WorkflowStage {
   name: string;
@@ -180,18 +181,7 @@ export default function SignupFlow() {
 
         toast.success('Account created successfully!');
         
-        // Load workspace data and update app context
-        try {
-          const workspaceData = await trpc.auth.getWorkspace.useQuery();
-          if (workspaceData) {
-            // Update app context with user's workspace data
-            // This will be handled by the dashboard layout when it loads
-          }
-        } catch (error) {
-          console.error('Failed to load workspace:', error);
-        }
-        
-        // Redirect to dashboard after signup
+        // Redirect to dashboard after signup - workspace will load on dashboard
         setTimeout(() => {
           navigate('/app?newUser=true');
         }, 1000);

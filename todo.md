@@ -242,3 +242,28 @@
 - [x] All 158 tests passing (no regressions)
 - [x] TypeScript compilation with no errors
 - [x] Dev server running smoothly with HMR updates
+
+
+## Phase 25: Fix Business Name Persistence & Add Workflow Stage Customization
+- [ ] Fix business name not persisting from signup to dashboard (Maninki 3D should display)
+- [ ] Verify workspace name is loaded from database after signup
+- [ ] Add workflow stage name customization (allow renaming "Raw Materials" to "Toys", etc.)
+- [ ] Create workflow stage editor in Settings page
+- [ ] Allow users to customize each stage name and icon
+- [ ] Save custom stage names to database
+- [ ] Display custom stage names in sidebar and home page
+
+## Phase 26: Build Comprehensive Guided Onboarding Tour
+- [ ] Create OnboardingTour component with multi-step walkthrough
+- [ ] Step 1: Welcome & business name confirmation
+- [ ] Step 2: Workflow overview (show selected stages)
+- [ ] Step 3: Workflow stage customization (rename stages)
+- [ ] Step 4: Home dashboard overview
+- [ ] Step 5: Sidebar navigation tour
+- [ ] Step 6: AI setup walkthrough
+- [ ] Step 7: Settings configuration
+- [ ] Step 8: Voice commands setup
+- [ ] Step 9: Getting started (first product/order)
+- [ ] Auto-start tour for new users
+- [ ] Allow users to skip or resume tour
+- [ ] Mark tour as complete in workspace

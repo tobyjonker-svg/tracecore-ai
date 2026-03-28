@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime, timeAgo } from '@/lib/store';
 import { useAuth } from '@/_core/hooks/useAuth';
-import OnboardingTour from '@/components/OnboardingTour';
+import { OnboardingTour } from '@/components/OnboardingTour';
 import { WorkflowCustomizer } from '@/components/WorkflowCustomizer';
 import { DASHBOARD_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import {
@@ -589,10 +589,8 @@ export default function Home() {
 
       {/* Onboarding Tour */}
       <OnboardingTour
-        steps={DASHBOARD_TOUR_STEPS}
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-        onComplete={() => markTourComplete('dashboard')}
+        open={isTourOpen}
+        onOpenChange={setIsTourOpen}
       />
       <WorkflowCustomizer open={isCustomizerOpen} onOpenChange={setIsCustomizerOpen} />
     </div>
