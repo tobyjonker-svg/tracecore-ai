@@ -89,24 +89,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       });
 
       // Build dynamic navigation based on workflow stages
-      if (workspace.workflowStages && Array.isArray(workspace.workflowStages)) {
-        const stageNames = workspace.workflowStages.map((s: any) => s.name);
+      if (selectedWorkspace && selectedWorkspace.workflowStages) {
+        let stages: any = selectedWorkspace.workflowStages;
         
-        // Filter nav items: keep core items + workflow-related items that match selected stages
-        const filtered = ALL_NAV_ITEMS.filter(item => {
-          if (item.isCore) return true; // Always show core items
+        // Handle if workflowStages is a string (JSON)
+        if (typeof stages === 'string') {
+          try {
+            stages = JSON.parse(stages);
+          } catch (e) {
+            console.error('Failed to parse workflowStages:', e);
+            stages = [];
+          }
+        }
+        
+        // Ensure stages is an array
+        if (Array.isArray(stages) && stages.length > 0) {
+          const stageNames = stages.map((s: any) => s.name || s).filter(Boolean);
           
-          // Check if this nav item matches any workflow stage
-          return stageNames.some((stageName: any) => 
-            item.label.toLowerCase().includes(stageName.toLowerCase()) ||
-            stageName.toLowerCase().includes(item.label.toLowerCase())
-          );
-        });
-        
-        setNavItems(filtered);
+          // Filter nav items: keep core items + workflow-related items that match selected stages
+          const filtered = ALL_NAV_ITEMS.filter(item => {
+            if (item.isCore) return true; // Always show core items
+            
+            // Check if this nav item matches any workflow stage
+            return stageNames.some((stageName: any) => 
+              item.label.toLowerCase().includes(stageName.toLowerCase()) ||
+              stageName.toLowerCase().includes(item.label.toLowerCase())
+            );
+          });
+          
+          setNavItems(filtered);
+        } else {
+          // No workflow stages, show only core items
+          setNavItems(ALL_NAV_ITEMS.filter(item => item.isCore));
+        }
+      } else {
+        // No workspace or no workflow stages, show only core items
+        setNavItems(ALL_NAV_ITEMS.filter(item => item.isCore));
       }
     }
-  }, [workspace, user, dispatch]);
+  }, [workspaces, user, dispatch]);
 
   // Check if this is a new user flow
   useEffect(() => {
