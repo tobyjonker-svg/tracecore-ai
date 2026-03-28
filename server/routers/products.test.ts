@@ -15,10 +15,12 @@ vi.mock('../db', () => ({
   updateProduct: vi.fn(),
   deleteProduct: vi.fn(),
   getInventoryValuation: vi.fn(),
-  getWorkspaceWithPayments: vi.fn(),
+  getWorkspaceByUserId: vi.fn(),
 }));
 
 import * as db from '../db';
+
+const mockGetWorkspaceByUserId = vi.mocked(db.getWorkspaceByUserId);
 
 const mockUser = {
   id: 1,
@@ -67,7 +69,7 @@ describe('Products Router', () => {
   describe('create', () => {
     it('should create a product successfully', async () => {
       const mockCreateProduct = vi.mocked(db.createProduct);
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
       mockCreateProduct.mockResolvedValue({ insertId: 1 } as any);
@@ -110,7 +112,7 @@ describe('Products Router', () => {
     });
 
     it('should fail without workspace', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       mockGetWorkspace.mockResolvedValue(null);
 
       const caller = productsRouter.createCaller({
@@ -129,7 +131,7 @@ describe('Products Router', () => {
     });
 
     it('should validate product name', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
 
       const caller = productsRouter.createCaller({
@@ -148,7 +150,7 @@ describe('Products Router', () => {
     });
 
     it('should validate cost per unit', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
 
       const caller = productsRouter.createCaller({
@@ -167,7 +169,7 @@ describe('Products Router', () => {
     });
 
     it('should validate selling price', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
 
       const caller = productsRouter.createCaller({
@@ -188,7 +190,7 @@ describe('Products Router', () => {
 
   describe('list', () => {
     it('should list all products for workspace', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -209,7 +211,7 @@ describe('Products Router', () => {
     });
 
     it('should return empty list when no products', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -238,7 +240,7 @@ describe('Products Router', () => {
 
   describe('getById', () => {
     it('should get product by ID', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -258,7 +260,7 @@ describe('Products Router', () => {
     });
 
     it('should fail for non-existent product', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -274,7 +276,7 @@ describe('Products Router', () => {
     });
 
     it('should fail for product from different workspace', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -294,7 +296,7 @@ describe('Products Router', () => {
 
   describe('update', () => {
     it('should update product successfully', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
       const mockUpdateProduct = vi.mocked(db.updateProduct);
 
@@ -321,7 +323,7 @@ describe('Products Router', () => {
     });
 
     it('should fail for non-existent product', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -344,7 +346,7 @@ describe('Products Router', () => {
 
   describe('delete', () => {
     it('should delete product successfully', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
       const mockDeleteProduct = vi.mocked(db.deleteProduct);
 
@@ -365,7 +367,7 @@ describe('Products Router', () => {
     });
 
     it('should fail for non-existent product', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProduct = vi.mocked(db.getProductById);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -383,7 +385,7 @@ describe('Products Router', () => {
 
   describe('getValuation', () => {
     it('should calculate inventory valuation', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetValuation = vi.mocked(db.getInventoryValuation);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -430,7 +432,7 @@ describe('Products Router', () => {
     });
 
     it('should handle empty inventory', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetValuation = vi.mocked(db.getInventoryValuation);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -452,7 +454,7 @@ describe('Products Router', () => {
     });
 
     it('should calculate correct margin percentage', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetValuation = vi.mocked(db.getInventoryValuation);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -485,7 +487,7 @@ describe('Products Router', () => {
 
   describe('Margin Calculations', () => {
     it('should calculate profit per unit correctly', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -509,7 +511,7 @@ describe('Products Router', () => {
     });
 
     it('should calculate margin percentage correctly', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -534,7 +536,7 @@ describe('Products Router', () => {
     });
 
     it('should calculate total cost value correctly', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);
@@ -558,7 +560,7 @@ describe('Products Router', () => {
     });
 
     it('should calculate total selling value correctly', async () => {
-      const mockGetWorkspace = vi.mocked(db.getWorkspaceWithPayments);
+      const mockGetWorkspace = mockGetWorkspaceByUserId;
       const mockGetProducts = vi.mocked(db.getProductsByWorkspace);
 
       mockGetWorkspace.mockResolvedValue(mockWorkspace);

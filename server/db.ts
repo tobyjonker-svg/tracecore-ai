@@ -249,6 +249,27 @@ export async function createPayment(payment: InsertPayment) {
 /**
  * Get workspace with payment info
  */
+export async function getWorkspaceByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get workspace: database not available");
+    return undefined;
+  }
+
+  try {
+    const workspace = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.userId, userId))
+      .limit(1);
+
+    return workspace.length > 0 ? workspace[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get workspace:", error);
+    throw error;
+  }
+}
+
 export async function getWorkspaceWithPayments(workspaceId: number) {
   const db = await getDb();
   if (!db) {

@@ -6,13 +6,13 @@
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../_core/trpc";
 import {
-  createProduct,
   getProductsByWorkspace,
   getProductById,
+  createProduct,
   updateProduct,
   deleteProduct,
   getInventoryValuation,
-  getWorkspaceWithPayments,
+  getWorkspaceByUserId,
 } from "../db";
 import { z } from "zod";
 
@@ -30,10 +30,15 @@ const CreateProductSchema = z.object({
 
 const UpdateProductSchema = CreateProductSchema.partial();
 
+const GetByIdSchema = z.object({
+  id: z.number().int().positive(),
+});
+
+const DeleteSchema = z.object({
+  id: z.number().int().positive(),
+});
+
 export const productsRouter = router({
-  /**
-   * Create a new product with cost and selling price
-   */
   create: protectedProcedure
     .input(CreateProductSchema)
     .mutation(async ({ ctx, input }) => {
@@ -46,7 +51,7 @@ export const productsRouter = router({
         }
 
         // Get user's workspace
-        const workspace = await getWorkspaceWithPayments(ctx.user.id);
+        const workspace = await getWorkspaceByUserId(ctx.user.id);
         if (!workspace?.id) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -54,7 +59,7 @@ export const productsRouter = router({
           });
         }
 
-        const result = await createProduct({
+        await createProduct({
           workspaceId: workspace.id,
           name: input.name,
           description: input.description,
@@ -66,12 +71,10 @@ export const productsRouter = router({
           unit: input.unit,
         });
 
-        return {
-          success: true,
-          message: "Product created successfully",
-        };
+        return { success: true };
       } catch (error) {
         console.error("[Products] Create error:", error);
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create product",
@@ -79,9 +82,6 @@ export const productsRouter = router({
       }
     }),
 
-  /**
-   * Get all products for the workspace
-   */
   list: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.user) {
@@ -91,7 +91,7 @@ export const productsRouter = router({
         });
       }
 
-      const workspace = await getWorkspaceWithPayments(ctx.user.id);
+      const workspace = await getWorkspaceByUserId(ctx.user.id);
       if (!workspace?.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -131,11 +131,8 @@ export const productsRouter = router({
     }
   }),
 
-  /**
-   * Get a single product by ID
-   */
   getById: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(GetByIdSchema)
     .query(async ({ ctx, input }) => {
       try {
         if (!ctx.user) {
@@ -145,7 +142,7 @@ export const productsRouter = router({
           });
         }
 
-        const workspace = await getWorkspaceWithPayments(ctx.user.id);
+        const workspace = await getWorkspaceByUserId(ctx.user.id);
         if (!workspace?.id) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -153,19 +150,19 @@ export const productsRouter = router({
           });
         }
 
-        const result = await getProductById(input.id);
-        if (!result || result.length === 0) {
+        const products = await getProductById(input.id);
+        if (products.length === 0) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Product not found",
           });
         }
 
-        const p = result[0];
+        const p = products[0];
         if (p.workspaceId !== workspace.id) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Cannot access this product",
+            message: "Access denied",
           });
         }
 
@@ -200,16 +197,8 @@ export const productsRouter = router({
       }
     }),
 
-  /**
-   * Update a product
-   */
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        data: UpdateProductSchema,
-      })
-    )
+    .input(z.object({ id: z.number().int().positive(), data: UpdateProductSchema }))
     .mutation(async ({ ctx, input }) => {
       try {
         if (!ctx.user) {
@@ -219,7 +208,7 @@ export const productsRouter = router({
           });
         }
 
-        const workspace = await getWorkspaceWithPayments(ctx.user.id);
+        const workspace = await getWorkspaceByUserId(ctx.user.id);
         if (!workspace?.id) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -227,19 +216,18 @@ export const productsRouter = router({
           });
         }
 
-        // Verify product belongs to workspace
-        const existing = await getProductById(input.id);
-        if (!existing || existing.length === 0) {
+        const products = await getProductById(input.id);
+        if (products.length === 0) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Product not found",
           });
         }
 
-        if (existing[0].workspaceId !== workspace.id) {
+        if (products[0].workspaceId !== workspace.id) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Cannot update this product",
+            message: "Access denied",
           });
         }
 
@@ -255,10 +243,7 @@ export const productsRouter = router({
 
         await updateProduct(input.id, updateData);
 
-        return {
-          success: true,
-          message: "Product updated successfully",
-        };
+        return { success: true };
       } catch (error) {
         console.error("[Products] Update error:", error);
         if (error instanceof TRPCError) throw error;
@@ -269,11 +254,8 @@ export const productsRouter = router({
       }
     }),
 
-  /**
-   * Delete a product
-   */
   delete: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(DeleteSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         if (!ctx.user) {
@@ -283,7 +265,7 @@ export const productsRouter = router({
           });
         }
 
-        const workspace = await getWorkspaceWithPayments(ctx.user.id);
+        const workspace = await getWorkspaceByUserId(ctx.user.id);
         if (!workspace?.id) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -291,28 +273,24 @@ export const productsRouter = router({
           });
         }
 
-        // Verify product belongs to workspace
-        const existing = await getProductById(input.id);
-        if (!existing || existing.length === 0) {
+        const products = await getProductById(input.id);
+        if (products.length === 0) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Product not found",
           });
         }
 
-        if (existing[0].workspaceId !== workspace.id) {
+        if (products[0].workspaceId !== workspace.id) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Cannot delete this product",
+            message: "Access denied",
           });
         }
 
         await deleteProduct(input.id);
 
-        return {
-          success: true,
-          message: "Product deleted successfully",
-        };
+        return { success: true };
       } catch (error) {
         console.error("[Products] Delete error:", error);
         if (error instanceof TRPCError) throw error;
@@ -323,9 +301,6 @@ export const productsRouter = router({
       }
     }),
 
-  /**
-   * Get inventory valuation summary (total cost value, selling value, profit potential)
-   */
   getValuation: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.user) {
@@ -335,7 +310,7 @@ export const productsRouter = router({
         });
       }
 
-      const workspace = await getWorkspaceWithPayments(ctx.user.id);
+      const workspace = await getWorkspaceByUserId(ctx.user.id);
       if (!workspace?.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
