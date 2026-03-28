@@ -101,8 +101,9 @@ export default function Products() {
             </div>
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Product Name *</Label>
+                <Label htmlFor="product-name" className="text-xs text-muted-foreground uppercase tracking-wide">Product Name *</Label>
                 <Input
+                  id="product-name"
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="e.g. Lion's Mane Tincture 100ml"
@@ -110,8 +111,9 @@ export default function Products() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Description</Label>
+                <Label htmlFor="product-description" className="text-xs text-muted-foreground uppercase tracking-wide">Description</Label>
                 <Textarea
+                  id="product-description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Brief product description..."
@@ -121,8 +123,9 @@ export default function Products() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Initial Stock</Label>
+                  <Label htmlFor="initial-stock" className="text-xs text-muted-foreground uppercase tracking-wide">Initial Stock</Label>
                   <Input
+                    id="initial-stock"
                     type="number"
                     value={stockOnHand}
                     onChange={e => setStockOnHand(e.target.value)}
@@ -131,8 +134,9 @@ export default function Products() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Low Stock Alert</Label>
+                  <Label htmlFor="low-stock-alert" className="text-xs text-muted-foreground uppercase tracking-wide">Low Stock Alert</Label>
                   <Input
+                    id="low-stock-alert"
                     type="number"
                     value={lowStockThreshold}
                     onChange={e => setLowStockThreshold(e.target.value)}
@@ -141,7 +145,7 @@ export default function Products() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+              <Button id="add-product-btn" type="submit" className="w-full bg-primary hover:bg-primary/90">
                 Add Product
               </Button>
             </form>

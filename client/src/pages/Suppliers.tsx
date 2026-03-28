@@ -153,6 +153,7 @@ export default function Suppliers() {
                 />
               </div>
               <Button
+                id="submit-supplier-btn"
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
                 disabled={isSubmitting}
