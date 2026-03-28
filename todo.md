@@ -211,3 +211,17 @@
 - [x] Redirect to dashboard after signup
 - [x] Create 33 comprehensive auth router tests
 - [x] All 158 tests passing (35 signup + 23 builder + 24 workflow + 22 payment + 33 auth + 11 email + 9 dashboard + 1 logout)
+
+
+## Phase 23: Fix Dashboard to Display User's Business Name and Workflow
+- [x] Load workspace data after signup completion using trpc.auth.getWorkspace
+- [x] Update AppContext with user's workspace information
+- [x] Display user's business name in Home page greeting (from workspace.name)
+- [x] Load user's workflow stages from database
+- [x] Filter sidebar navigation to show only selected workflow stages
+- [x] Removed hardcoded workflow items that weren't selected
+- [x] Keep core items (Home, Settings, Reports, Inventory Activity, Upgrade, AI Assistant)
+- [x] Dynamic navigation filters based on workflow stage names
+- [x] Verify business name displays correctly in greeting
+- [x] Verify business name persists across page refreshes
+- [x] All 158 tests passing

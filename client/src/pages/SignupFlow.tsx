@@ -179,9 +179,21 @@ export default function SignupFlow() {
         });
 
         toast.success('Account created successfully!');
+        
+        // Load workspace data and update app context
+        try {
+          const workspaceData = await trpc.auth.getWorkspace.useQuery();
+          if (workspaceData) {
+            // Update app context with user's workspace data
+            // This will be handled by the dashboard layout when it loads
+          }
+        } catch (error) {
+          console.error('Failed to load workspace:', error);
+        }
+        
         // Redirect to dashboard after signup
         setTimeout(() => {
-          navigate('/app');
+          navigate('/app?newUser=true');
         }, 1000);
       } catch (error: any) {
         console.error('Signup error:', error);
