@@ -150,36 +150,6 @@ export const authRouter = router({
   /**
    * Get user's workspace with workflow details (protected)
    */
-  getWorkspace: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Not authenticated',
-      });
-    }
-
-    try {
-      const workspace = await getWorkspaceByUserId(ctx.user.id);
-
-      if (!workspace) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Workspace not found',
-        });
-      }
-
-      return workspace;
-    } catch (error) {
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get workspace',
-      });
-    }
-  }),
 
 
   /**

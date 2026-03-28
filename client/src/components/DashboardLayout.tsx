@@ -54,20 +54,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [navItems, setNavItems] = useState(ALL_NAV_ITEMS);
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
-  const { data: workspace } = trpc.auth.getWorkspace.useQuery(undefined, {
+  const { data: workspaces } = trpc.auth.getWorkspaces.useQuery(undefined, {
     enabled: !!user && isAuthenticated,
   });
+  
+  const [workspace, setWorkspace] = useState<any>(null);
 
   // Load user's workspace and update app context
   useEffect(() => {
-    if (workspace && user) {
+    if (workspaces && workspaces.length > 0 && user) {
+      // Try to load MycoAlchemy first, otherwise use first workspace
+      const activeWorkspaceId = localStorage.getItem('activeWorkspaceId');
+      let selectedWorkspace = workspaces[0];
+      
+      if (activeWorkspaceId) {
+        const found = workspaces.find(w => w.id === parseInt(activeWorkspaceId));
+        if (found) selectedWorkspace = found;
+      } else {
+        const mycoAlchemy = workspaces.find(w => w.name === 'MycoAlchemy');
+        if (mycoAlchemy) selectedWorkspace = mycoAlchemy;
+      }
+      
+      setWorkspace(selectedWorkspace);
+      localStorage.setItem('activeWorkspaceId', selectedWorkspace.id.toString());
+      
       // Update app context with user's workspace data
       dispatch({
         type: 'UPDATE_WORKSPACE',
         payload: {
-          id: workspace.id.toString(),
-          name: workspace.name || 'My Business',
-          businessType: (workspace.businessType || 'Other') as any,
+          id: selectedWorkspace.id.toString(),
+          name: selectedWorkspace.name || 'My Business',
+          businessType: (selectedWorkspace.businessType || 'Other') as any,
         },
       });
 
