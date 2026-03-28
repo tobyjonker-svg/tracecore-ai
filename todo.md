@@ -193,3 +193,21 @@
 - [x] Landing page buttons now point to /signup
 - [x] Created 35 comprehensive SignupFlow tests
 - [x] All 125 tests passing
+
+
+## Phase 22: Connect Signup Form to Backend Account Creation
+- [x] Review user schema and add workflow/business detail fields to workspaces table
+- [x] Add database migration for new fields (workflowTemplate, workflowStages, currency, region, language)
+- [x] Create database helper functions (createUserWithSignup, getUserByEmail, getWorkspaceByUserId)
+- [x] Create tRPC signup procedure with validation
+- [x] Add email uniqueness validation
+- [x] Add checkEmailAvailable tRPC query
+- [x] Connect SignupFlow form to tRPC signup mutation
+- [x] Handle signup errors and display validation messages with toast
+- [x] Add loading state and spinner during signup
+- [x] Save workflow configuration to database (JSON format)
+- [x] Save business details (currency, region, language) to workspace
+- [x] Create workspace for new user with free tier
+- [x] Redirect to dashboard after signup
+- [x] Create 33 comprehensive auth router tests
+- [x] All 158 tests passing (35 signup + 23 builder + 24 workflow + 22 payment + 33 auth + 11 email + 9 dashboard + 1 logout)

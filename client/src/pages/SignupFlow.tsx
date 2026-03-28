@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import WorkflowBuilder from '@/components/WorkflowBuilder';
 import { toast } from 'sonner';
+import { trpc } from '@/lib/trpc';
 
 interface WorkflowStage {
   name: string;
@@ -134,7 +135,10 @@ export default function SignupFlow() {
     });
   };
 
-  const handleNext = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const signupMutation = trpc.auth.signup.useMutation();
+
+  const handleNext = async () => {
     // Validate current step
     if (signupData.step === 1) {
       if (!signupData.workflow.template || signupData.workflow.stages.length === 0) {
@@ -159,9 +163,33 @@ export default function SignupFlow() {
         toast.error('Passwords do not match');
         return;
       }
-      // Here you would call the signup API
-      toast.success('Account created successfully!');
-      navigate('/app');
+
+      // Submit signup
+      setIsLoading(true);
+      try {
+        const result = await signupMutation.mutateAsync({
+          email: signupData.account.email,
+          password: signupData.account.password,
+          businessName: signupData.businessDetails.businessName,
+          workflowTemplate: signupData.workflow.template,
+          workflowStages: signupData.workflow.stages,
+          currency: signupData.businessDetails.currency,
+          region: signupData.businessDetails.region,
+          language: signupData.businessDetails.language,
+        });
+
+        toast.success('Account created successfully!');
+        // Redirect to dashboard after signup
+        setTimeout(() => {
+          navigate('/app');
+        }, 1000);
+      } catch (error: any) {
+        console.error('Signup error:', error);
+        const errorMessage = error?.message || 'Failed to create account';
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -456,10 +484,20 @@ export default function SignupFlow() {
 
           <Button
             onClick={handleNext}
+            disabled={isLoading}
             className="flex-1 flex items-center justify-center gap-2"
           >
-            {signupData.step === 3 ? 'Create Account' : 'Next'}
-            {signupData.step < 3 && <ChevronRight className="w-4 h-4" />}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              <>
+                {signupData.step === 3 ? 'Create Account' : 'Next'}
+                {signupData.step < 3 && <ChevronRight className="w-4 h-4" />}
+              </>
+            )}
           </Button>
         </div>
       </div>

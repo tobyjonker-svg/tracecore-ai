@@ -34,6 +34,12 @@ export const workspaces = mysqlTable("workspaces", {
   logo: text("logo"), // URL to logo
   branding: text("branding"), // JSON string for custom colors, fonts, etc.
   tier: mysqlEnum("tier", ["free", "pro", "pro_plus"]).default("free").notNull(),
+  // Workflow and business details from signup
+  workflowTemplate: varchar("workflowTemplate", { length: 100 }), // e.g., 'Manufacturing', 'Retail', etc.
+  workflowStages: text("workflowStages"), // JSON array of workflow stages
+  currency: varchar("currency", { length: 3 }).default("ZAR").notNull(), // ZAR, USD, EUR, etc.
+  region: varchar("region", { length: 50 }).default("ZA").notNull(), // Country/region code
+  language: varchar("language", { length: 10 }).default("en").notNull(), // Language code
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

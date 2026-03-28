@@ -5,6 +5,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { billingRouter } from "./routers/billing";
 import { paymentRouter } from "./routers/payment";
 import { workflowRouter } from "./routers/workflow";
+import { authRouter } from "./routers/auth";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -18,6 +19,11 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    // Signup procedures
+    signup: authRouter.signup,
+    checkEmailAvailable: authRouter.checkEmailAvailable,
+    getProfile: authRouter.getProfile,
+    getWorkspace: authRouter.getWorkspace,
   }),
   billing: billingRouter,
   payment: paymentRouter,
