@@ -90,3 +90,181 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+// ──────────────────────────────────────────────────────────────
+// Payment Queries
+// ──────────────────────────────────────────────────────────────
+
+import { payments, subscriptions, workspaces, Payment, InsertPayment } from "../drizzle/schema";
+import { and, desc } from "drizzle-orm";
+
+/**
+ * Get all payments for a workspace with pagination
+ */
+export async function getPaymentsByWorkspace(
+  workspaceId: number,
+  limit: number = 50,
+  offset: number = 0
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get payments: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.workspaceId, workspaceId))
+      .orderBy(desc(payments.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get payments:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get payment statistics for a workspace
+ */
+export async function getPaymentStats(workspaceId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get payment stats: database not available");
+    return null;
+  }
+
+  try {
+    const allPayments = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.workspaceId, workspaceId));
+
+    const totalCount = allPayments.length;
+    const pendingCount = allPayments.filter(p => p.status === 'pending').length;
+    const completedCount = allPayments.filter(p => p.status === 'completed').length;
+    const failedCount = allPayments.filter(p => p.status === 'failed').length;
+
+    const totalRevenue = allPayments
+      .filter(p => p.status === 'completed')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    return {
+      totalCount,
+      pendingCount,
+      completedCount,
+      failedCount,
+      totalRevenue,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get payment stats:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get a single payment by ID
+ */
+export async function getPaymentById(paymentId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get payment: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.id, paymentId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get payment:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update payment status
+ */
+export async function updatePaymentStatus(
+  paymentId: number,
+  status: 'pending' | 'completed' | 'failed'
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update payment: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db
+      .update(payments)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(payments.id, paymentId));
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to update payment:", error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new payment
+ */
+export async function createPayment(payment: InsertPayment) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create payment: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db
+      .insert(payments)
+      .values({
+        ...payment,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to create payment:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get workspace with payment info
+ */
+export async function getWorkspaceWithPayments(workspaceId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get workspace: database not available");
+    return undefined;
+  }
+
+  try {
+    const workspace = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
+
+    return workspace.length > 0 ? workspace[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get workspace:", error);
+    throw error;
+  }
+}

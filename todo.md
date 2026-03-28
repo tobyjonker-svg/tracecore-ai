@@ -112,3 +112,14 @@
 - [x] Add custom payment terms field
 - [x] Add custom message field
 - [x] Preview email before saving
+
+## Phase 16: Connect Payment Dashboard to tRPC Backend
+- [x] Create payment database helpers in server/db.ts
+- [x] Implement tRPC payment queries (list, stats, getById)
+- [x] Implement tRPC payment mutations (confirm, reject, create)
+- [x] Connect AdminPaymentDashboard to tRPC hooks
+- [x] Add real-time payment filtering and search
+- [x] Implement CSV export functionality
+- [x] Add payment detail modal with actions
+- [x] Create comprehensive payment router tests (22 tests)
+- [x] All tests passing (43 total)
