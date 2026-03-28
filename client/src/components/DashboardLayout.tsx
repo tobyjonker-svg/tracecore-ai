@@ -106,15 +106,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (Array.isArray(stages) && stages.length > 0) {
           const stageNames = stages.map((s: any) => s.name || s).filter(Boolean);
           
-          // Filter nav items: keep core items + workflow-related items that match selected stages
+          // Map workflow stage names to navigation items
+          const stageToNavMap: { [key: string]: string[] } = {
+            'suppliers': ['Suppliers'],
+            'raw materials': ['Inputs'],
+            'production': ['Production Runs'],
+            'inventory': ['Inventory Activity'],
+            'purchasing': ['Orders'],
+            'sales': ['Orders'],
+            'fulfillment': ['Orders'],
+          };
+          
+          // Build set of nav labels to show
+          const navLabelsToShow = new Set<string>();
+          stageNames.forEach((stageName: any) => {
+            const normalized = stageName.toLowerCase();
+            if (stageToNavMap[normalized]) {
+              stageToNavMap[normalized].forEach(label => navLabelsToShow.add(label));
+            }
+          });
+          
+          // Filter nav items: keep core items + items that match workflow stages
           const filtered = ALL_NAV_ITEMS.filter(item => {
             if (item.isCore) return true; // Always show core items
-            
-            // Check if this nav item matches any workflow stage
-            return stageNames.some((stageName: any) => 
-              item.label.toLowerCase().includes(stageName.toLowerCase()) ||
-              stageName.toLowerCase().includes(item.label.toLowerCase())
-            );
+            return navLabelsToShow.has(item.label);
           });
           
           setNavItems(filtered);
