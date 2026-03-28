@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, name, userId, createdAt FROM workspaces ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute SELECT id, name, userId, createdAt FROM workspaces ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "maninki 3D",
+      "userId": "1",
+      "createdAt": "2026-03-28 20:29:31"
+    },
+    {
+      "id": "1",
+      "name": "Maninki Toys",
+      "userId": "1",
+      "createdAt": "2026-03-28 19:49:47"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tuserId\tcreatedAt\n30001\tmaninki 3D\t1\t2026-03-28 20:29:31\n1\tManinki Toys\t1\t2026-03-28 19:49:47\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}

@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO workspaces (userId, name, businessType, tier, workflowTemplate, workflowStages, currency, region, language) VALUES (1, 'MycoAlchemy', 'Manufacturing', 'pro', 'Manufacturing', '[{\"id\": \"1\", \"name\": \"Suppliers\", \"icon\": \"🏭\", \"color\": \"#3b82f6\"}, {\"id\": \"2\", \"name\": \"Raw Materials\", \"icon\": \"📦\", \"color\": \"#10b981\"}, {\"id\": \"3\", \"name\": \"Production\", \"icon\": \"🔧\", \"color\": \"#f59e0b\"}, {\"id\": \"4\", \"name\": \"Inventory\", \"icon\": \"📊\", \"color\": \"#8b5cf6\"}]', 'ZAR', 'ZA', 'en');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute INSERT INTO workspaces (userId, name, businessType, tier, workflowTemplate, workflowStages, currency, region, language) VALUES (1, 'MycoAlchemy', 'Manufacturing', 'pro', 'Manufacturing', '[{\"id\": \"1\", \"name\": \"Suppliers\", \"icon\": \"🏭\", \"color\": \"#3b82f6\"}, {\"id\": \"2\", \"name\": \"Raw Materials\", \"icon\": \"📦\", \"color\": \"#10b981\"}, {\"id\": \"3\", \"name\": \"Production\", \"icon\": \"🔧\", \"color\": \"#f59e0b\"}, {\"id\": \"4\", \"name\": \"Inventory\", \"icon\": \"📊\", \"color\": \"#8b5cf6\"}]', 'ZAR', 'ZA', 'en');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 357
+}

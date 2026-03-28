@@ -267,3 +267,19 @@
 - [ ] Auto-start tour for new users
 - [ ] Allow users to skip or resume tour
 - [ ] Mark tour as complete in workspace
+
+
+## Phase 27: Cost & Margin Tracking System
+- [ ] Add costPerUnit field to products table in database schema
+- [ ] Add sellingPrice field to products table
+- [ ] Create database migration for new fields
+- [ ] Add cost input fields to Products page
+- [ ] Calculate and display profit per unit
+- [ ] Calculate and display profit margin %
+- [ ] Create Profit Margin Report page with inventory valuation
+- [ ] Show total cost value (units × cost)
+- [ ] Show total selling value (units × selling price)
+- [ ] Show total profit potential
+- [ ] Update Inventory Activity to display cost & margin
+- [ ] Add CSV export for profit margin report
+- [ ] Test with multiple products and inventory levels
