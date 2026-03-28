@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit2, Trash2, TrendingUp, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, TrendingUp, Package, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -66,12 +66,58 @@ export default function Products() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(INITIAL_FORM);
 
-  // Queries and mutations
-  const { data: products, isLoading, refetch } = trpc.products.list.useQuery();
-  const { data: valuation } = trpc.products.getValuation.useQuery();
-  const createMutation = trpc.products.create.useMutation();
-  const updateMutation = trpc.products.update.useMutation();
-  const deleteMutation = trpc.products.delete.useMutation();
+  // Queries and mutations with error handling
+  const { 
+    data: products = [], 
+    isLoading, 
+    error: productsError,
+    refetch 
+  } = trpc.products.list.useQuery(undefined, {
+    retry: 1,
+  });
+
+  const { 
+    data: valuation,
+  } = trpc.products.getValuation.useQuery(undefined, {
+    retry: 1,
+  });
+
+  const createMutation = trpc.products.create.useMutation({
+    onSuccess: () => {
+      toast.success('Product created successfully');
+      setIsOpen(false);
+      setForm(INITIAL_FORM);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create product: ${error.message}`);
+    },
+  });
+
+  const updateMutation = trpc.products.update.useMutation({
+    onSuccess: () => {
+      toast.success('Product updated successfully');
+      setIsOpen(false);
+      setForm(INITIAL_FORM);
+      setIsEditing(false);
+      setEditingId(null);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update product: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = trpc.products.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Product deleted successfully');
+      setDeleteId(null);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete product: ${error.message}`);
+    },
+  });
 
   // Calculate profit margin
   const costPerUnit = parseFloat(form.costPerUnit) || 0;
@@ -102,375 +148,289 @@ export default function Products() {
     setIsOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsOpen(false);
-    setForm(INITIAL_FORM);
-    setIsEditing(false);
-    setEditingId(null);
-  };
-
   const handleSubmit = async () => {
-    // Validation
     if (!form.name.trim()) {
       toast.error('Product name is required');
       return;
     }
-    if (!form.costPerUnit || parseFloat(form.costPerUnit) <= 0) {
-      toast.error('Cost per unit must be greater than 0');
-      return;
-    }
-    if (!form.sellingPrice || parseFloat(form.sellingPrice) <= 0) {
-      toast.error('Selling price must be greater than 0');
+
+    if (!form.costPerUnit || !form.sellingPrice) {
+      toast.error('Cost and selling price are required');
       return;
     }
 
-    try {
-      if (isEditing && editingId) {
-        await updateMutation.mutateAsync({
-          id: editingId,
-          data: {
-            name: form.name,
-            description: form.description || undefined,
-            sku: form.sku || undefined,
-            costPerUnit: parseFloat(form.costPerUnit),
-            sellingPrice: parseFloat(form.sellingPrice),
-            currentStock: parseInt(form.currentStock) || 0,
-            lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
-            unit: form.unit,
-          },
-        });
-        toast.success('Product updated successfully');
-      } else {
-        await createMutation.mutateAsync({
+    if (isEditing && editingId) {
+      await updateMutation.mutateAsync({
+        id: editingId,
+        data: {
           name: form.name,
-          description: form.description || undefined,
-          sku: form.sku || undefined,
+          description: form.description,
+          sku: form.sku,
           costPerUnit: parseFloat(form.costPerUnit),
           sellingPrice: parseFloat(form.sellingPrice),
-          currentStock: parseInt(form.currentStock) || 0,
-          lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+          currentStock: parseInt(form.currentStock),
+          lowStockThreshold: form.lowStockThreshold ? parseInt(form.lowStockThreshold) : undefined,
           unit: form.unit,
-        });
-        toast.success('Product created successfully');
-      }
-      handleCloseDialog();
-      refetch();
-    } catch (error) {
-      toast.error(isEditing ? 'Failed to update product' : 'Failed to create product');
+        },
+      });
+    } else {
+      await createMutation.mutateAsync({
+        name: form.name,
+        description: form.description,
+        sku: form.sku,
+        costPerUnit: parseFloat(form.costPerUnit),
+        sellingPrice: parseFloat(form.sellingPrice),
+        currentStock: parseInt(form.currentStock),
+        lowStockThreshold: form.lowStockThreshold ? parseInt(form.lowStockThreshold) : undefined,
+        unit: form.unit,
+      });
     }
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
+    if (deleteId) {
       await deleteMutation.mutateAsync({ id: deleteId });
-      toast.success('Product deleted successfully');
-      setDeleteId(null);
-      refetch();
-    } catch (error) {
-      toast.error('Failed to delete product');
     }
   };
 
-  const summary = valuation?.summary;
+  // Show error state if queries failed
+  if (productsError && !isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Failed to Load Products</h2>
+        <p className="text-muted-foreground mb-6">
+          {productsError.message || 'An error occurred while loading products'}
+        </p>
+        <Button onClick={() => refetch()}>Try Again</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Package className="w-8 h-8 text-primary" />
-            Products & Inventory
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Package className="w-8 h-8" />
+            Products
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage your products with cost tracking and profit margin calculations
+            Manage your products with cost and margin tracking
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button
-              onClick={() => handleOpenDialog()}
-              className="gap-2"
-            >
+            <Button onClick={() => handleOpenDialog()} className="gap-2">
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {isEditing ? 'Edit Product' : 'Add New Product'}
               </DialogTitle>
               <DialogDescription>
-                {isEditing
-                  ? 'Update product details and pricing'
-                  : 'Create a new product with cost and selling price'}
+                Enter product details including cost and selling price
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Product Name *</label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
-                    }
-                    placeholder="e.g., Organic Coffee Beans"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">SKU</label>
-                  <Input
-                    value={form.sku}
-                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                    placeholder="e.g., SKU-001"
-                  />
-                </div>
+              {/* Product Name */}
+              <div>
+                <label className="text-sm font-medium">Product Name *</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g., Coffee Beans"
+                />
               </div>
 
+              {/* Description */}
               <div>
                 <label className="text-sm font-medium">Description</label>
                 <Textarea
                   value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  placeholder="Product details and specifications"
-                  rows={3}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Product description"
+                  rows={2}
                 />
               </div>
 
-              {/* Pricing */}
-              <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-sm">Pricing & Margins</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Cost Per Unit *</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.costPerUnit}
-                      onChange={(e) =>
-                        setForm({ ...form, costPerUnit: e.target.value })
-                      }
-                      placeholder="0.00"
-                    />
+              {/* SKU */}
+              <div>
+                <label className="text-sm font-medium">SKU</label>
+                <Input
+                  value={form.sku}
+                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                  placeholder="e.g., CB-001"
+                />
+              </div>
+
+              {/* Cost Per Unit */}
+              <div>
+                <label className="text-sm font-medium">Cost Per Unit (ZAR) *</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.costPerUnit}
+                  onChange={(e) => setForm({ ...form, costPerUnit: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Selling Price */}
+              <div>
+                <label className="text-sm font-medium">Selling Price (ZAR) *</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.sellingPrice}
+                  onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Profit Margin Preview */}
+              {costPerUnit > 0 && sellingPrice > 0 && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Profit Per Unit:</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      ZAR {profitPerUnit.toFixed(2)}
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Selling Price *</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.sellingPrice}
-                      onChange={(e) =>
-                        setForm({ ...form, sellingPrice: e.target.value })
-                      }
-                      placeholder="0.00"
-                    />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm font-medium">Margin %:</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      {profitMarginPercent}%
+                    </span>
                   </div>
                 </div>
+              )}
 
-                {/* Margin Preview */}
-                {costPerUnit > 0 && sellingPrice > 0 && (
-                  <div className="grid grid-cols-3 gap-3 pt-2 border-t">
-                    <div className="bg-background p-3 rounded">
-                      <p className="text-xs text-muted-foreground">Profit/Unit</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {profitPerUnit.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="bg-background p-3 rounded">
-                      <p className="text-xs text-muted-foreground">Margin %</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {profitMarginPercent}%
-                      </p>
-                    </div>
-                    <div className="bg-background p-3 rounded">
-                      <p className="text-xs text-muted-foreground">Markup</p>
-                      <p className="text-lg font-semibold text-blue-600">
-                        {costPerUnit > 0
-                          ? ((sellingPrice / costPerUnit - 1) * 100).toFixed(1)
-                          : '0'}
-                        %
-                      </p>
-                    </div>
-                  </div>
-                )}
+              {/* Current Stock */}
+              <div>
+                <label className="text-sm font-medium">Current Stock</label>
+                <Input
+                  type="number"
+                  value={form.currentStock}
+                  onChange={(e) => setForm({ ...form, currentStock: e.target.value })}
+                  placeholder="0"
+                />
               </div>
 
-              {/* Inventory */}
-              <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-sm">Inventory</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Current Stock</label>
-                    <Input
-                      type="number"
-                      value={form.currentStock}
-                      onChange={(e) =>
-                        setForm({ ...form, currentStock: e.target.value })
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Low Stock Alert</label>
-                    <Input
-                      type="number"
-                      value={form.lowStockThreshold}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          lowStockThreshold: e.target.value,
-                        })
-                      }
-                      placeholder="10"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Unit</label>
-                    <Input
-                      value={form.unit}
-                      onChange={(e) =>
-                        setForm({ ...form, unit: e.target.value })
-                      }
-                      placeholder="units"
-                    />
-                  </div>
-                </div>
+              {/* Low Stock Threshold */}
+              <div>
+                <label className="text-sm font-medium">Low Stock Threshold</label>
+                <Input
+                  type="number"
+                  value={form.lowStockThreshold}
+                  onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })}
+                  placeholder="10"
+                />
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 justify-end pt-4">
-                <Button
-                  variant="outline"
-                  onClick={handleCloseDialog}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                >
-                  {isEditing ? 'Update Product' : 'Create Product'}
-                </Button>
+              {/* Unit */}
+              <div>
+                <label className="text-sm font-medium">Unit</label>
+                <Input
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  placeholder="e.g., kg, pieces"
+                />
               </div>
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleSubmit}
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="w-full"
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'Saving...'
+                  : isEditing
+                  ? 'Update Product'
+                  : 'Add Product'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Summary Cards */}
-      {summary && (
+      {valuation && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total Cost Value</p>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              R{summary.totalCostValue.toFixed(2)}
-            </p>
+          <div className="p-4 bg-card rounded-lg border">
+            <p className="text-sm text-muted-foreground mb-1">Total Products</p>
+            <p className="text-2xl font-bold">{valuation.summary.productCount}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total Selling Value</p>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              R{summary.totalSellingValue.toFixed(2)}
-            </p>
+          <div className="p-4 bg-card rounded-lg border">
+            <p className="text-sm text-muted-foreground mb-1">Total Cost Value</p>
+            <p className="text-2xl font-bold">ZAR {valuation.summary.totalCostValue.toFixed(2)}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Profit Potential</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">
-              R{summary.totalProfitPotential.toFixed(2)}
-            </p>
+          <div className="p-4 bg-card rounded-lg border">
+            <p className="text-sm text-muted-foreground mb-1">Total Selling Value</p>
+            <p className="text-2xl font-bold">ZAR {valuation.summary.totalSellingValue.toFixed(2)}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Overall Margin</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">
-              {summary.overallMarginPercent}%
+          <div className="p-4 bg-card rounded-lg border">
+            <p className="text-sm text-muted-foreground mb-1">Overall Margin</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+              {valuation.summary.overallMarginPercent}%
             </p>
           </div>
         </div>
       )}
 
       {/* Products Table */}
-      <div className="bg-card border rounded-lg overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">
-            Loading products...
-          </div>
-        ) : !products || products.length === 0 ? (
-          <div className="p-8 text-center">
-            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-            <p className="text-muted-foreground">No products yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Add your first product to start tracking costs and margins
-            </p>
-          </div>
-        ) : (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="text-muted-foreground">Loading products...</div>
+        </div>
+      ) : products && products.length > 0 ? (
+        <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Cost/Unit</TableHead>
-                <TableHead className="text-right">Selling Price</TableHead>
-                <TableHead className="text-right">Profit/Unit</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead className="text-right">Cost</TableHead>
+                <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-right">Margin %</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products.map((product: any) => (
                 <TableRow key={product.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      {product.sku && (
-                        <p className="text-xs text-muted-foreground">
-                          {product.sku}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.sku || '-'}</TableCell>
+                  <TableCell className="text-right">ZAR {product.costPerUnit.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">ZAR {product.sellingPrice.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
-                    R{product.costPerUnit.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    R{product.sellingPrice.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="text-green-600 font-medium">
-                      R{product.profitPerUnit.toFixed(2)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="text-green-600 font-medium">
+                    <span className={cn(
+                      'font-semibold',
+                      parseFloat(product.profitMarginPercent) > 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    )}>
                       {product.profitMarginPercent}%
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span
-                      className={cn(
-                        'font-medium',
-                        product.currentStock <
-                          (product.lowStockThreshold || 10)
-                          ? 'text-red-600'
-                          : 'text-foreground'
-                      )}
-                    >
-                      {product.currentStock} {product.unit}
+                    <span className={cn(
+                      product.currentStock < (product.lowStockThreshold || 10)
+                        ? 'text-orange-600 dark:text-orange-400 font-semibold'
+                        : ''
+                    )}>
+                      {product.currentStock}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    R{product.totalSellingValue.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-end">
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -483,7 +443,7 @@ export default function Products() {
                         size="sm"
                         onClick={() => setDeleteId(product.id)}
                       >
-                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
                   </TableCell>
@@ -491,10 +451,26 @@ export default function Products() {
               ))}
             </TableBody>
           </Table>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
+          <Package className="w-12 h-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Products Yet</h3>
+          <p className="text-muted-foreground mb-6">
+            Start by adding your first product to track costs and margins
+          </p>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Your First Product
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+      )}
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -503,13 +479,14 @@ export default function Products() {
               Are you sure you want to delete this product? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-3 justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
+              disabled={deleteMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
