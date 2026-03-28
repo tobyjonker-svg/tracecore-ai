@@ -10,6 +10,7 @@ import {
   createUserWithSignup,
   getUserByEmail,
   getWorkspaceByUserId,
+  getWorkspacesByUserId,
 } from '../db';
 
 /**
@@ -179,4 +180,68 @@ export const authRouter = router({
       });
     }
   }),
+
+
+  /**
+   * Get all workspaces for the current user
+   */
+  getWorkspaces: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Not authenticated',
+      });
+    }
+
+    try {
+      const workspaces = await getWorkspacesByUserId(ctx.user.id);
+      return workspaces;
+    } catch (error) {
+      console.error('Get workspaces error:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get workspaces',
+      });
+    }
+  }),
+
+  /**
+   * Set active workspace (store in localStorage on client)
+   * This is a helper - actual storage is client-side
+   */
+  setActiveWorkspace: publicProcedure
+    .input(z.object({ workspaceId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Not authenticated',
+        });
+      }
+
+      try {
+        const workspaces = await getWorkspacesByUserId(ctx.user.id);
+        const workspace = workspaces.find(w => w.id === input.workspaceId);
+
+        if (!workspace) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Workspace not found or not authorized',
+          });
+        }
+
+        return {
+          success: true,
+          message: 'Active workspace set',
+          workspace,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('Set active workspace error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to set active workspace',
+        });
+      }
+    }),
 });
