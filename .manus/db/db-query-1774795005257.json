@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE workspaces SET tier = 'pro_plus' WHERE userId IN (SELECT id FROM users WHERE role = 'admin' LIMIT 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute UPDATE workspaces SET tier = 'pro_plus' WHERE userId IN (SELECT id FROM users WHERE role = 'admin' LIMIT 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 396
+}
