@@ -209,48 +209,7 @@ export const INITIAL_STATE: AppState = {
       contactInfo: 'hello@grainandspore.com · +1 (503) 555-0192',
       createdAt: '2025-03-01T08:30:00Z',
     },
-    {
-      id: 'sup-5',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Herbal Imports Ltd',
-      contactInfo: 'test@herbalimports.com · +27 (11) 555-0001',
-      createdAt: '2025-03-15T09:00:00Z',
-    },
-    {
-      id: 'sup-6',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Premium Tea Leaves Co',
-      contactInfo: 'test@premiumtea.com · +27 (21) 555-0002',
-      createdAt: '2025-03-15T09:15:00Z',
-    },
-    {
-      id: 'sup-7',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Organic Spice Traders',
-      contactInfo: 'test@organicspices.com · +27 (31) 555-0003',
-      createdAt: '2025-03-15T09:30:00Z',
-    },
-    {
-      id: 'sup-8',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Eco Packaging Solutions',
-      contactInfo: 'test@ecopackaging.com · +27 (12) 555-0004',
-      createdAt: '2025-03-15T09:45:00Z',
-    },
-    {
-      id: 'sup-9',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Natural Extracts Inc',
-      contactInfo: 'test@naturalextracts.com · +27 (11) 555-0005',
-      createdAt: '2025-03-15T10:00:00Z',
-    },
-    {
-      id: 'sup-10',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Global Ingredients Hub',
-      contactInfo: 'test@globalingredients.com · +27 (21) 555-0006',
-      createdAt: '2025-03-15T10:15:00Z',
-    },
+
   ],
 
   inputs: [
@@ -317,33 +276,7 @@ export const INITIAL_STATE: AppState = {
       unit: 'L',
       createdAt: '2025-03-01T10:00:00Z',
     },
-    {
-      id: 'inp-8',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Chamomile Flowers',
-      supplierId: 'sup-5',
-      stockOnHand: 5200,
-      unit: 'g',
-      createdAt: '2025-03-15T11:00:00Z',
-    },
-    {
-      id: 'inp-9',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Peppermint Leaves',
-      supplierId: 'sup-6',
-      stockOnHand: 3800,
-      unit: 'g',
-      createdAt: '2025-03-15T11:15:00Z',
-    },
-    {
-      id: 'inp-10',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Ginger Root Powder',
-      supplierId: 'sup-7',
-      stockOnHand: 2900,
-      unit: 'g',
-      createdAt: '2025-03-15T11:30:00Z',
-    },
+
   ],
 
   products: [
@@ -392,51 +325,7 @@ export const INITIAL_STATE: AppState = {
       lowStockThreshold: 15,
       createdAt: '2025-03-01T09:00:00Z',
     },
-    {
-      id: 'prod-6',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Chamomile Tea Blend 50g',
-      description: 'Organic chamomile flowers for relaxation and sleep support.',
-      stockOnHand: 85,
-      lowStockThreshold: 30,
-      createdAt: '2025-03-15T12:00:00Z',
-    },
-    {
-      id: 'prod-7',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Peppermint Tea Blend 50g',
-      description: 'Fresh peppermint leaves for digestive support and refreshment.',
-      stockOnHand: 62,
-      lowStockThreshold: 25,
-      createdAt: '2025-03-15T12:15:00Z',
-    },
-    {
-      id: 'prod-8',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Ginger Turmeric Tea 50g',
-      description: 'Anti-inflammatory blend with ginger and turmeric for wellness.',
-      stockOnHand: 45,
-      lowStockThreshold: 20,
-      createdAt: '2025-03-15T12:30:00Z',
-    },
-    {
-      id: 'prod-9',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Herbal Wellness Mix 100g',
-      description: 'Premium blend of 5 organic herbs for overall health.',
-      stockOnHand: 28,
-      lowStockThreshold: 15,
-      createdAt: '2025-03-15T12:45:00Z',
-    },
-    {
-      id: 'prod-10',
-      workspaceId: WORKSPACE_ID,
-      name: '[TEST] Relaxation Tea Sampler',
-      description: 'Variety pack with 5 different calming herbal blends.',
-      stockOnHand: 18,
-      lowStockThreshold: 10,
-      createdAt: '2025-03-15T13:00:00Z',
-    },
+
   ],
 
   productionRuns: [
@@ -480,46 +369,7 @@ export const INITIAL_STATE: AppState = {
       notes: 'Batch #LM-2025-030. Replenishment run.',
       createdAt: '2025-03-10T08:30:00Z',
     },
-    {
-      id: 'pr-6',
-      workspaceId: WORKSPACE_ID,
-      productId: 'prod-6',
-      quantity: 40,
-      notes: '[TEST] Batch #CH-2025-001. Chamomile tea production run.',
-      createdAt: '2025-03-15T13:30:00Z',
-    },
-    {
-      id: 'pr-7',
-      workspaceId: WORKSPACE_ID,
-      productId: 'prod-7',
-      quantity: 35,
-      notes: '[TEST] Batch #PM-2025-001. Peppermint tea production run.',
-      createdAt: '2025-03-15T14:00:00Z',
-    },
-    {
-      id: 'pr-8',
-      workspaceId: WORKSPACE_ID,
-      productId: 'prod-8',
-      quantity: 25,
-      notes: '[TEST] Batch #GT-2025-001. Ginger turmeric blend production.',
-      createdAt: '2025-03-15T14:30:00Z',
-    },
-    {
-      id: 'pr-9',
-      workspaceId: WORKSPACE_ID,
-      productId: 'prod-9',
-      quantity: 20,
-      notes: '[TEST] Batch #HW-2025-001. Herbal wellness mix production.',
-      createdAt: '2025-03-15T15:00:00Z',
-    },
-    {
-      id: 'pr-10',
-      workspaceId: WORKSPACE_ID,
-      productId: 'prod-10',
-      quantity: 15,
-      notes: '[TEST] Batch #RT-2025-001. Relaxation tea sampler production.',
-      createdAt: '2025-03-15T15:30:00Z',
-    },
+
   ],
 
   orders: [
@@ -577,61 +427,7 @@ export const INITIAL_STATE: AppState = {
       ],
       createdAt: '2025-03-14T08:00:00Z',
     },
-    {
-      id: 'ord-6',
-      workspaceId: WORKSPACE_ID,
-      customerName: '[TEST] Tea Lovers Cafe',
-      status: 'Pending',
-      items: [
-        { id: 'oi-10', orderId: 'ord-6', productId: 'prod-6', quantity: 15 },
-        { id: 'oi-11', orderId: 'ord-6', productId: 'prod-7', quantity: 12 },
-      ],
-      createdAt: '2025-03-17T14:00:00Z',
-    },
-    {
-      id: 'ord-7',
-      workspaceId: WORKSPACE_ID,
-      customerName: '[TEST] Wellness Boutique',
-      status: 'Packed',
-      items: [
-        { id: 'oi-12', orderId: 'ord-7', productId: 'prod-8', quantity: 8 },
-        { id: 'oi-13', orderId: 'ord-7', productId: 'prod-9', quantity: 5 },
-      ],
-      createdAt: '2025-03-16T15:30:00Z',
-    },
-    {
-      id: 'ord-8',
-      workspaceId: WORKSPACE_ID,
-      customerName: '[TEST] Organic Health Store',
-      status: 'Shipped',
-      items: [
-        { id: 'oi-14', orderId: 'ord-8', productId: 'prod-10', quantity: 10 },
-      ],
-      createdAt: '2025-03-15T16:00:00Z',
-    },
-    {
-      id: 'ord-9',
-      workspaceId: WORKSPACE_ID,
-      customerName: '[TEST] Spa & Wellness Resort',
-      status: 'Pending',
-      items: [
-        { id: 'oi-15', orderId: 'ord-9', productId: 'prod-6', quantity: 20 },
-        { id: 'oi-16', orderId: 'ord-9', productId: 'prod-8', quantity: 15 },
-        { id: 'oi-17', orderId: 'ord-9', productId: 'prod-10', quantity: 8 },
-      ],
-      createdAt: '2025-03-17T17:00:00Z',
-    },
-    {
-      id: 'ord-10',
-      workspaceId: WORKSPACE_ID,
-      customerName: '[TEST] Herbal Remedy Shop',
-      status: 'Shipped',
-      items: [
-        { id: 'oi-18', orderId: 'ord-10', productId: 'prod-7', quantity: 18 },
-        { id: 'oi-19', orderId: 'ord-10', productId: 'prod-9', quantity: 10 },
-      ],
-      createdAt: '2025-03-14T13:00:00Z',
-    },
+
   ],
 
   inventoryActivity: [
