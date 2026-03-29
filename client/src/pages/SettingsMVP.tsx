@@ -127,6 +127,30 @@ export function SettingsMVP() {
               Admin: Full access to all features | Manager: Can create/edit data | Staff: View only
             </p>
           </div>
+          <Button onClick={handleSaveWorkspace}>Save Role Settings</Button>
+        </CardContent>
+      </Card>
+
+      {/* Subscription & Billing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Crown className="w-5 h-5" />
+            Subscription & Billing
+          </CardTitle>
+          <CardDescription>Manage your subscription plan</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <div>
+              <p className="font-medium text-foreground">Pro+ (Premium)</p>
+              <p className="text-sm text-muted-foreground">✓ Active</p>
+            </div>
+            <Check className="w-5 h-5 text-emerald-500" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            You have access to all Pro+ features including advanced analytics, custom integrations, and priority support.
+          </p>
         </CardContent>
       </Card>
 
@@ -141,10 +165,7 @@ export function SettingsMVP() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Email Notifications</p>
-              <p className="text-sm text-muted-foreground">Receive alerts via email</p>
-            </div>
+            <label className="text-sm font-medium">Email Notifications</label>
             <input
               type="checkbox"
               checked={emailNotifications}
@@ -153,10 +174,7 @@ export function SettingsMVP() {
             />
           </div>
           <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">In-App Alerts</p>
-              <p className="text-sm text-muted-foreground">Show notifications in app</p>
-            </div>
+            <label className="text-sm font-medium">Alert Notifications</label>
             <input
               type="checkbox"
               checked={alertNotifications}
@@ -165,34 +183,6 @@ export function SettingsMVP() {
             />
           </div>
           <Button onClick={handleSaveNotifications}>Save Notification Preferences</Button>
-        </CardContent>
-      </Card>
-
-      {/* Workspace Info */}
-      <Card className="bg-muted/50">
-        <CardHeader>
-          <CardTitle className="text-sm">Workspace Information</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Workspace Created:</span>
-            <span>March 29, 2026</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Subscription Plan:</span>
-            <span className="flex items-center gap-1 font-semibold text-emerald-400">
-              <Crown className="w-4 h-4" />
-              Pro+ (Premium)
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Tier Status:</span>
-            <span className="text-emerald-400 font-medium">✓ Active</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Users:</span>
-            <span>1 active</span>
-          </div>
         </CardContent>
       </Card>
     </div>
