@@ -4,7 +4,7 @@
  * - Mobile: collapsible sidebar with hamburger menu
  * - Desktop: 240px fixed sidebar, top header bar
  * - Responsive breakpoints: sm (640px), md (768px), lg (1024px)
- * - Auth gating: redirects unauthenticated users to login
+ * - Auth gating: only renders when authenticated
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -49,41 +49,24 @@ const NAV_ITEMS = [
   { href: '/inputs', label: 'Raw Inputs', icon: Package },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/production', label: 'Production Runs', icon: Factory },
-  { href: '/inventory', label: 'Inventory Activity', icon: Activity },
-  { href: '/batches', label: 'Batch Management', icon: Package },
-  { href: '/supplier-performance', label: 'Supplier Performance', icon: TrendingUp },
+  { href: '/production', label: 'Production', icon: Factory },
+  { href: '/inventory-log', label: 'Inventory', icon: Activity },
+  { href: '/batches', label: 'Batches', icon: FlaskConical },
+  { href: '/supplier-performance', label: 'Supplier Perf', icon: BarChart3 },
   { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/app/ai-chat', label: 'AI Chat', icon: Sparkles },
-  { href: '/app/voice-commands', label: 'Voice Commands', icon: Mic },
-  { href: '/app/voice-analytics', label: 'Voice Analytics', icon: TrendingUp },
-  { href: '/app/custom-commands', label: 'Custom Commands', icon: Sparkles },
-  { href: '/app/command-scheduling', label: 'Scheduling', icon: Clock },
-  { href: '/app/realtime-execution', label: 'Real-Time Execution', icon: Zap },
-  { href: '/app/command-permissions', label: 'Permissions', icon: Lock },
-  { href: '/app/command-templates', label: 'Templates', icon: Download },
-  { href: '/app/audit-log', label: 'Audit Log', icon: FileText },
-  { href: '/app/command-chaining', label: 'Chaining', icon: Zap },
-  { href: '/app/mobile-voice', label: 'Mobile Voice', icon: Smartphone },
-  { href: '/app/realtime-notifications', label: 'Notifications', icon: Bell },
-  { href: '/app/predictive-analytics', label: 'Analytics', icon: TrendingUp },
-  { href: '/app/integration-hub', label: 'Integrations', icon: Zap },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
-  { href: '/users', label: 'Users', icon: Users },
+  { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
+  const location = useLocation()[0];
   
-  // Fetch unread alerts only when authenticated
+  // ONLY fetch protected queries when auth is confirmed
   const { data: unreadAlerts = [] } = trpc.alerts.getUnread.useQuery(undefined, {
     enabled: isAuthenticated && !loading,
   });
@@ -92,9 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const isNewUser = new URLSearchParams(window.location.search).get('newUser') === 'true';
     if (isNewUser) {
-      // Force EMPTY_STATE for new users
       dispatch({ type: 'RESET_STATE' });
-      // Remove query param from URL
       window.history.replaceState({}, '', '/app');
     }
   }, [dispatch]);
@@ -114,6 +95,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show nothing (useAuth will handle redirect if needed)
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Authenticating...</p>
         </div>
       </div>
     );
@@ -158,229 +151,150 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
-            const isActive = location === item.href || location.startsWith(item.href + '/');
+            const isActive = location === item.href;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeSidebar}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className="truncate">{item.label}</span>
+              <Link key={item.href} href={item.href}>
+                <a
+                  onClick={closeSidebar}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className="text-sm font-medium truncate">{item.label}</span>
+                </a>
               </Link>
             );
           })}
         </nav>
 
-        {/* Upgrade Section - Only show if not Pro+ */}
-        {state.workspace.tier !== 'pro_plus' && (
-          <div className="px-3 py-3 border-t border-border">
-            <button
-              onClick={() => {
-                navigate('/pricing');
-                closeSidebar();
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary hover:from-primary/30 hover:to-violet-500/30 transition-colors border border-primary/30"
-            >
-              <Zap className="w-5 h-5 shrink-0" />
-              <span className="truncate">Upgrade Plan</span>
-            </button>
-          </div>
-        )}
-        {state.workspace.tier === 'pro_plus' && (
-          <div className="px-3 py-3 border-t border-border">
-            <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-400 border border-emerald-500/30 cursor-default">
-              <Zap className="w-5 h-5 shrink-0" />
-              <span className="truncate">Pro+ Active</span>
+        {/* User Section */}
+        <div className="border-t border-border p-4 space-y-3">
+          {/* Pro+ Status */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <CreditCard className="w-4 h-4 text-emerald-500 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-emerald-500">Pro+ Active</p>
+              <p className="text-xs text-muted-foreground truncate">Premium features unlocked</p>
             </div>
           </div>
-        )}
 
-        {/* AI Assistant Link */}
-        <div className="px-3 py-3 border-t border-border">
-          <Link
-            href="/ai-assistant"
-            onClick={closeSidebar}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              location === '/ai-assistant'
-                ? 'bg-primary/15 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            <Sparkles className="w-5 h-5 shrink-0" />
-            <span className="truncate">AI Assistant</span>
-          </Link>
-        </div>
-
-        {/* Admin Links */}
-        {user?.role === 'admin' && (
-          <div className="px-3 py-3 border-t border-border space-y-1">
-            <Link
-              href="/admin/payments"
-              onClick={closeSidebar}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                location === '/admin/payments'
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-            >
-              <CreditCard className="w-5 h-5 shrink-0" />
-              <span className="truncate">Payments</span>
-            </Link>
-            <Link
-              href="/admin/analytics"
-              onClick={closeSidebar}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                location === '/admin/analytics'
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-            >
-              <TrendingUp className="w-5 h-5 shrink-0" />
-              <span className="truncate">Analytics</span>
-            </Link>
+          {/* User Profile */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-primary-foreground">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-foreground truncate">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">Admin</p>
+            </div>
           </div>
-        )}
+        </div>
       </aside>
       )}
 
       {/* ── Main Content ────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border bg-background/50 backdrop-blur-sm shrink-0">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-          >
-            <Menu className="w-5 h-5 text-foreground" />
-          </button>
+        <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">TraceCore AI</h1>
+          </div>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Upgrade Button */}
-          <button
-            onClick={() => navigate('/pricing')}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary hover:from-primary/30 hover:to-violet-500/30 transition-colors border border-primary/30 mr-4"
-          >
-            <Zap className="w-4 h-4" />
-            <span>Upgrade</span>
-          </button>
-
-          {/* Header Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Alerts Dropdown */}
             <Popover open={alertsOpen} onOpenChange={setAlertsOpen}>
               <PopoverTrigger asChild>
                 <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
                   <Bell className="w-5 h-5 text-muted-foreground" />
                   {unreadAlerts.length > 0 && (
-                    <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                   )}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
-                <div className="bg-background border border-border rounded-lg">
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <h3 className="font-semibold text-foreground">Alerts</h3>
-                    {unreadAlerts.length > 0 && (
-                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
-                        {unreadAlerts.length} new
-                      </span>
-                    )}
+              <PopoverContent align="end" className="w-80">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm">Notifications</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {unreadAlerts.length} unread alerts
+                    </p>
                   </div>
-                  
-                  {/* Alerts List */}
-                  <div className="max-h-96 overflow-y-auto">
-                    {unreadAlerts.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-muted-foreground">
-                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p>No new alerts</p>
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {unreadAlerts.slice(0, 5).map((alert: any) => (
+                      <div key={alert.id} className="p-2 bg-muted rounded text-sm">
+                        <p className="font-medium">{alert.title}</p>
+                        <p className="text-xs text-muted-foreground">{alert.message}</p>
                       </div>
-                    ) : (
-                      unreadAlerts.slice(0, 5).map((alert: any) => (
-                        <div key={alert.id} className="px-4 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="text-lg mt-0.5">
-                              {alert.type === 'low_stock' && '📦'}
-                              {alert.type === 'expiring_batch' && '⏰'}
-                              {alert.type === 'late_delivery' && '🚚'}
-                              {alert.type === 'quality_issue' && '⚠️'}
-                              {alert.type === 'system' && '⚙️'}
-                              {!['low_stock', 'expiring_batch', 'late_delivery', 'quality_issue', 'system'].includes(alert.type) && '📢'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{alert.message}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {new Date(alert.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    ))}
                   </div>
-                  
-                  {/* Footer */}
-                  {unreadAlerts.length > 0 && (
-                    <div className="px-4 py-3 border-t border-border">
-                      <button
-                        onClick={() => {
-                          navigate('/alerts');
-                          setAlertsOpen(false);
-                        }}
-                        className="w-full text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-                      >
-                        View All Alerts →
-                      </button>
-                    </div>
-                  )}
+                  <Link href="/alerts">
+                    <a className="text-xs text-primary hover:underline">View all alerts →</a>
+                  </Link>
                 </div>
               </PopoverContent>
             </Popover>
 
-            {/* Command Center Button */}
+            {/* Command Center */}
             <button
               onClick={() => setCommandCenterOpen(!commandCenterOpen)}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Command Center (Ctrl+K)"
             >
               <Zap className="w-5 h-5 text-muted-foreground" />
             </button>
 
             {/* User Menu */}
-            <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
-                <span className="text-xs font-bold text-white">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-foreground">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 p-2 hover:bg-muted rounded-lg transition-colors">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary-foreground">
+                      {user?.email?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-48">
+                <div className="space-y-2">
+                  <Link href="/settings">
+                    <a className="block px-3 py-2 text-sm hover:bg-muted rounded transition-colors">
+                      Settings
+                    </a>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      // Logout logic here
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded transition-colors text-red-500"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </header>
 
-        {/* Content */}
+        {/* Page Content */}
         <main className="flex-1 overflow-y-auto">
-          {children}
+          <div className="p-4 md:p-6">
+            {children}
+          </div>
         </main>
       </div>
 
