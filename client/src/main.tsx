@@ -18,14 +18,19 @@ const redirectToLoginIfUnauthorized = async (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  const loginUrl = await getLoginUrl();
-  window.location.href = loginUrl;
+  try {
+    const loginUrl = await getLoginUrl();
+    window.location.href = loginUrl;
+  } catch (err) {
+    console.error('Failed to redirect to login:', err);
+    window.location.href = '/';
+  }
 };
 
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
+    redirectToLoginIfUnauthorized(error).catch(console.error);
     console.error("[API Query Error]", error);
   }
 });
@@ -33,7 +38,7 @@ queryClient.getQueryCache().subscribe(event => {
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error);
+    redirectToLoginIfUnauthorized(error).catch(console.error);
     console.error("[API Mutation Error]", error);
   }
 });

@@ -83,8 +83,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
   
-  // Fetch unread alerts
-  const { data: unreadAlerts = [] } = trpc.alerts.getUnread.useQuery();
+  // Fetch unread alerts only when authenticated
+  const { data: unreadAlerts = [] } = trpc.alerts.getUnread.useQuery(undefined, {
+    enabled: isAuthenticated && !loading,
+  });
 
   // Check if this is a new user flow
   useEffect(() => {
@@ -96,8 +98,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       window.history.replaceState({}, '', '/app');
     }
   }, [dispatch]);
-
-
 
   const lowStockCount = state.products.filter(
     p => p.stockOnHand <= p.lowStockThreshold

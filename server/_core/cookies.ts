@@ -9,40 +9,46 @@ function isIpAddress(host: string) {
 }
 
 function isSecureRequest(req: Request) {
+  // Check direct protocol
   if (req.protocol === "https") return true;
 
+  // Check X-Forwarded-Proto header (set by proxy/load balancer)
   const forwardedProto = req.headers["x-forwarded-proto"];
-  if (!forwardedProto) return false;
+  if (forwardedProto) {
+    const protoList = Array.isArray(forwardedProto)
+      ? forwardedProto
+      : forwardedProto.split(",");
+    if (protoList.some(proto => proto.trim().toLowerCase() === "https")) {
+      return true;
+    }
+  }
 
-  const protoList = Array.isArray(forwardedProto)
-    ? forwardedProto
-    : forwardedProto.split(",");
+  // In production, assume HTTPS (Manus proxy handles it)
+  if (process.env.NODE_ENV === 'production') {
+    return true;
+  }
 
-  return protoList.some(proto => proto.trim().toLowerCase() === "https");
+  return false;
 }
 
 export function getSessionCookieOptions(
   req: Request
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
-  // const hostname = req.hostname;
-  // const shouldSetDomain =
-  //   hostname &&
-  //   !LOCAL_HOSTS.has(hostname) &&
-  //   !isIpAddress(hostname) &&
-  //   hostname !== "127.0.0.1" &&
-  //   hostname !== "::1";
-
-  // const domain =
-  //   shouldSetDomain && !hostname.startsWith(".")
-  //     ? `.${hostname}`
-  //     : shouldSetDomain
-  //       ? hostname
-  //       : undefined;
+  // For OAuth flows across auth.manus.im → app domain, we need:
+  // - SameSite: 'none' (allows cross-site cookies)
+  // - Secure: true (required when SameSite=none)
+  // - HttpOnly: true (prevents JavaScript access)
+  
+  const isSecure = isSecureRequest(req);
+  
+  // Force secure=true for production to support OAuth cross-site cookies
+  // In development (localhost), allow insecure cookies
+  const secure = isSecure || process.env.NODE_ENV === 'production';
 
   return {
     httpOnly: true,
     path: "/",
     sameSite: "none",
-    secure: isSecureRequest(req),
+    secure: secure,
   };
 }
