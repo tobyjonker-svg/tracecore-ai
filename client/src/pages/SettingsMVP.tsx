@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, User, Lock, Bell } from 'lucide-react';
+import { Settings, User, Lock, Bell, Crown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SettingsMVP() {
@@ -150,9 +150,16 @@ export function SettingsMVP() {
             <span className="text-muted-foreground">Workspace Created:</span>
             <span>March 29, 2026</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Subscription Plan:</span>
-            <span>Professional</span>
+            <span className="flex items-center gap-1 font-semibold text-emerald-400">
+              <Crown className="w-4 h-4" />
+              Pro+ (Premium)
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tier Status:</span>
+            <span className="text-emerald-400 font-medium">✓ Active</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Users:</span>

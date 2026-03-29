@@ -37,6 +37,7 @@ export interface Workspace {
   businessType: BusinessType;
   customCategory?: string;
   createdAt: string;
+  tier: 'free' | 'pro' | 'pro_plus';
   // Workflow customization
   enableInputs: boolean;
   enableOrders: boolean;
@@ -145,6 +146,7 @@ export const EMPTY_STATE: AppState = {
     name: '',
     businessType: 'Other',
     createdAt: new Date().toISOString(),
+    tier: 'free',
     enableInputs: true,
     enableOrders: true,
     enableShipping: true,
@@ -171,6 +173,7 @@ export const INITIAL_STATE: AppState = {
     name: 'MycoAlchemy',
     businessType: 'Mushroom Extracts',
     createdAt: '2025-01-15T08:00:00Z',
+    tier: 'pro_plus',
     enableInputs: true,
     enableOrders: true,
     enableShipping: true,
