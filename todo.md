@@ -190,3 +190,7 @@
 - [x] Added sign-in dialog to Landing page with email and name fields
 - [x] Local sign-in creates session and redirects to dashboard
 - [x] All 113 tests passing with local sign-in implementation
+
+- [x] Fixed local sign-in redirect - added 500ms delay to ensure session cookie is set before redirecting
+- [x] Added better error logging to debug sign-in issues
+- [x] All 113 tests passing with redirect fix

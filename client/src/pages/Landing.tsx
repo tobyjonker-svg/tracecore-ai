@@ -84,9 +84,13 @@ export default function Landing() {
 
       const data = await response.json();
       toast.success('Signed in successfully!');
-      window.location.href = data.redirectUrl || '/';
+      // Add a small delay to ensure session cookie is set before redirecting
+      setTimeout(() => {
+        window.location.href = data.redirectUrl || '/';
+      }, 500);
     } catch (error) {
       console.error('Sign in failed:', error);
+      console.error('Full error:', error);
       toast.error(error instanceof Error ? error.message : 'Sign in failed');
       setIsSigningIn(false);
     }
