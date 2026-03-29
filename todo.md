@@ -181,3 +181,7 @@
 - [x] Products page crashes 5 seconds after load - Fixed: Removed error callbacks from tRPC queries that were triggering redirects
 - [x] Rewrote Products.tsx with proper error handling and graceful fallbacks
 - [x] All 113 tests passing, zero TypeScript errors
+
+- [x] Fixed Sign In button not working - Updated OAuth login endpoint to accept frontend origin parameter
+- [x] getLoginUrl now passes window.location.origin to server for correct redirect URI
+- [x] OAuth callback now uses correct domain for deployed environment

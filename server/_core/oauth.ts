@@ -14,7 +14,10 @@ export function registerOAuthRoutes(app: Express) {
   // Login endpoint - returns the OAuth portal URL
   app.get("/api/oauth/login", (req: Request, res: Response) => {
     try {
-      const redirectUri = `${req.protocol}://${req.get('host')}/api/oauth/callback`;
+      // Use the origin parameter from frontend if provided, otherwise fall back to req.get('host')
+      const frontendOrigin = getQueryParam(req, 'origin');
+      const host = frontendOrigin ? new URL(frontendOrigin).host : req.get('host');
+      const redirectUri = `${req.protocol}://${host}/api/oauth/callback`;
       const state = Buffer.from(redirectUri).toString('base64');
       const oauthPortalUrl = "https://auth.manus.im";
       const appId = ENV.appId;
