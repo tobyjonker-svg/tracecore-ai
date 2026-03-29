@@ -19,7 +19,10 @@ export function registerOAuthRoutes(app: Express) {
       // Use the origin parameter from frontend if provided, otherwise fall back to req.get('host')
       const frontendOrigin = getQueryParam(req, 'origin');
       const host = frontendOrigin ? new URL(frontendOrigin).host : req.get('host');
-      const redirectUri = `${req.protocol}://${host}/api/oauth/callback`;
+      // Always use HTTPS for OAuth redirect URI (req.protocol may be http through proxy)
+      const protocol = frontendOrigin ? new URL(frontendOrigin).protocol.replace(':', '') : 'https';
+      const redirectUri = `${protocol}://${host}/api/oauth/callback`;
+      console.log('[OAuth] Redirect URI:', redirectUri);
       const state = Buffer.from(redirectUri).toString('base64');
       const oauthPortalUrl = "https://auth.manus.im";
       const appId = ENV.appId;
