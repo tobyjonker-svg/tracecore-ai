@@ -15,6 +15,7 @@ export function Inputs() {
     description: "",
     costPerUnit: "",
     unit: "kg",
+    supplierId: "",
   });
 
   const { data: inputs, isLoading, error, refetch } = trpc.inputs.list.useQuery();
@@ -30,6 +31,7 @@ export function Inputs() {
         description: input.description || "",
         costPerUnit: input.costPerUnit.toString(),
         unit: input.unit,
+        supplierId: input.supplierId?.toString() || "",
       });
     } else {
       setEditingInput(null);
@@ -38,6 +40,7 @@ export function Inputs() {
         description: "",
         costPerUnit: "",
         unit: "kg",
+        supplierId: "",
       });
     }
     setIsDialogOpen(true);
@@ -57,6 +60,7 @@ export function Inputs() {
           description: formData.description,
           costPerUnit: parseFloat(formData.costPerUnit),
           unit: formData.unit,
+          supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
         });
         toast.success("Input updated successfully");
       } else {
@@ -65,6 +69,7 @@ export function Inputs() {
           description: formData.description,
           costPerUnit: parseFloat(formData.costPerUnit),
           unit: formData.unit,
+          supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
         });
         toast.success("Input created successfully");
       }
@@ -221,6 +226,16 @@ export function Inputs() {
                   <option value="units">Units</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Supplier ID (Optional)</label>
+              <Input
+                type="number"
+                placeholder="Supplier ID"
+                value={formData.supplierId}
+                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+              />
+              <p className="text-xs text-gray-500 mt-1">Link to a supplier for tracking pricing</p>
             </div>
             <div className="flex gap-2 justify-end pt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

@@ -277,7 +277,7 @@ export default function Products() {
                         <SelectValue placeholder="Choose input..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="0">None</SelectItem>
                         {inputs.map((input) => (
                           <SelectItem key={input.id} value={input.id.toString()}>
                             {input.name} ({input.costPerUnit} per {input.unit})
