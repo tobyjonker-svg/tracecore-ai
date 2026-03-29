@@ -289,10 +289,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, EMPTY_STATE, (initial) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-      return EMPTY_STATE;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure tier is set - use INITIAL_STATE as default for admin
+        if (!parsed.workspace.tier) {
+          return { ...parsed, workspace: { ...parsed.workspace, tier: 'pro_plus' } };
+        }
+        return parsed;
+      }
+      return INITIAL_STATE;
     } catch {
-      return EMPTY_STATE;
+      return INITIAL_STATE;
     }
   });
 
