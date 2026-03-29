@@ -194,3 +194,6 @@
 - [x] Fixed local sign-in redirect - added 500ms delay to ensure session cookie is set before redirecting
 - [x] Added better error logging to debug sign-in issues
 - [x] All 113 tests passing with redirect fix
+
+- [x] Fixed sign-in redirect URL from "/" to "/app" to go to dashboard instead of landing page
+- [x] All 113 tests passing with correct redirect

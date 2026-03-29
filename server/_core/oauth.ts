@@ -68,7 +68,7 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.json({ success: true, redirectUrl: '/' });
+      res.json({ success: true, redirectUrl: '/app' });
     } catch (error) {
       console.error("[Auth] Local sign-in failed", error);
       res.status(500).json({ error: "Local sign-in failed" });
