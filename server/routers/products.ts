@@ -21,6 +21,8 @@ const CreateProductSchema = z.object({
   name: z.string().min(1, "Product name is required").max(255),
   description: z.string().optional(),
   sku: z.string().max(100).optional(),
+  inputId: z.number().int().positive().optional(), // Link to raw material
+  conversionRatio: z.number().positive("Conversion ratio must be positive").optional(), // e.g., 1kg makes 100 capsules
   costPerUnit: z.number().positive("Cost per unit must be positive"),
   sellingPrice: z.number().positive("Selling price must be positive"),
   currentStock: z.number().int().nonnegative("Stock must be non-negative").default(0),
@@ -64,6 +66,8 @@ export const productsRouter = router({
           name: input.name,
           description: input.description,
           sku: input.sku,
+          inputId: input.inputId,
+          conversionRatio: input.conversionRatio?.toString(),
           costPerUnit: input.costPerUnit.toString(),
           sellingPrice: input.sellingPrice.toString(),
           currentStock: input.currentStock,
@@ -106,6 +110,8 @@ export const productsRouter = router({
         name: p.name,
         description: p.description,
         sku: p.sku,
+        inputId: p.inputId,
+        conversionRatio: p.conversionRatio ? parseFloat(p.conversionRatio.toString()) : undefined,
         costPerUnit: parseFloat(p.costPerUnit.toString()),
         sellingPrice: parseFloat(p.sellingPrice.toString()),
         currentStock: p.currentStock,

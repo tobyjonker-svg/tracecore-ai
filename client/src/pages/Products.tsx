@@ -1,6 +1,7 @@
 /**
  * Products Management Page
  * Add, edit, and manage products with cost per unit, selling price, and profit margin tracking
+ * Now includes input (raw material) linking with conversion ratios
  */
 
 import { useState } from 'react';
@@ -33,6 +34,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Edit2, Trash2, TrendingUp, Package, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -41,6 +49,8 @@ interface ProductForm {
   name: string;
   description: string;
   sku: string;
+  inputId: string;
+  conversionRatio: string;
   costPerUnit: string;
   sellingPrice: string;
   currentStock: string;
@@ -52,6 +62,8 @@ const INITIAL_FORM: ProductForm = {
   name: '',
   description: '',
   sku: '',
+  inputId: '',
+  conversionRatio: '',
   costPerUnit: '',
   sellingPrice: '',
   currentStock: '0',
@@ -73,6 +85,12 @@ export default function Products() {
     error: productsError,
     refetch 
   } = trpc.products.list.useQuery(undefined, {
+    retry: 1,
+  });
+
+  const { 
+    data: inputs = [],
+  } = trpc.inputs.list.useQuery(undefined, {
     retry: 1,
   });
 
@@ -119,90 +137,73 @@ export default function Products() {
     },
   });
 
-  // Calculate profit margin
-  const costPerUnit = parseFloat(form.costPerUnit) || 0;
-  const sellingPrice = parseFloat(form.sellingPrice) || 0;
-  const profitPerUnit = sellingPrice - costPerUnit;
-  const profitMarginPercent =
-    sellingPrice > 0 ? ((profitPerUnit / sellingPrice) * 100).toFixed(2) : '0.00';
-
-  const handleOpenDialog = (product?: any) => {
-    if (product) {
-      setIsEditing(true);
-      setEditingId(product.id);
-      setForm({
-        name: product.name,
-        description: product.description || '',
-        sku: product.sku || '',
-        costPerUnit: product.costPerUnit.toString(),
-        sellingPrice: product.sellingPrice.toString(),
-        currentStock: product.currentStock.toString(),
-        lowStockThreshold: product.lowStockThreshold?.toString() || '10',
-        unit: product.unit || 'units',
-      });
-    } else {
-      setIsEditing(false);
-      setEditingId(null);
-      setForm(INITIAL_FORM);
+  const handleSubmit = async () => {
+    if (!form.name || !form.sellingPrice) {
+      toast.error('Please fill in required fields (Name, Selling Price)');
+      return;
     }
+
+    const productData = {
+      name: form.name,
+      description: form.description,
+      sku: form.sku,
+      inputId: form.inputId ? parseInt(form.inputId) : undefined,
+      conversionRatio: form.conversionRatio ? parseFloat(form.conversionRatio) : undefined,
+      costPerUnit: parseFloat(form.costPerUnit) || 0,
+      sellingPrice: parseFloat(form.sellingPrice),
+      currentStock: parseInt(form.currentStock) || 0,
+      lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+      unit: form.unit,
+    };
+
+    if (isEditing && editingId) {
+      updateMutation.mutate({ id: editingId, data: productData });
+    } else {
+      createMutation.mutate(productData);
+    }
+  };
+
+  const handleEdit = (product: any) => {
+    setForm({
+      name: product.name,
+      description: product.description || '',
+      sku: product.sku || '',
+      inputId: product.inputId?.toString() || '',
+      conversionRatio: product.conversionRatio?.toString() || '',
+      costPerUnit: product.costPerUnit.toString(),
+      sellingPrice: product.sellingPrice.toString(),
+      currentStock: product.currentStock.toString(),
+      lowStockThreshold: product.lowStockThreshold?.toString() || '10',
+      unit: product.unit || 'units',
+    });
+    setEditingId(product.id);
+    setIsEditing(true);
     setIsOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.error('Product name is required');
-      return;
-    }
-
-    if (!form.costPerUnit || !form.sellingPrice) {
-      toast.error('Cost and selling price are required');
-      return;
-    }
-
-    if (isEditing && editingId) {
-      await updateMutation.mutateAsync({
-        id: editingId,
-        data: {
-          name: form.name,
-          description: form.description,
-          sku: form.sku,
-          costPerUnit: parseFloat(form.costPerUnit),
-          sellingPrice: parseFloat(form.sellingPrice),
-          currentStock: parseInt(form.currentStock),
-          lowStockThreshold: form.lowStockThreshold ? parseInt(form.lowStockThreshold) : undefined,
-          unit: form.unit,
-        },
-      });
-    } else {
-      await createMutation.mutateAsync({
-        name: form.name,
-        description: form.description,
-        sku: form.sku,
-        costPerUnit: parseFloat(form.costPerUnit),
-        sellingPrice: parseFloat(form.sellingPrice),
-        currentStock: parseInt(form.currentStock),
-        lowStockThreshold: form.lowStockThreshold ? parseInt(form.lowStockThreshold) : undefined,
-        unit: form.unit,
-      });
-    }
+  const handleDelete = (id: number) => {
+    deleteMutation.mutate({ id });
   };
 
-  const handleDelete = async () => {
-    if (deleteId) {
-      await deleteMutation.mutateAsync({ id: deleteId });
-    }
+  const calculateMargin = (cost: number, price: number): string => {
+    if (price === 0) return '0';
+    return ((price - cost) / price * 100).toFixed(1);
   };
 
-  // Show error state if queries failed
-  if (productsError && !isLoading) {
+  const calculateInputCost = (inputId: string, ratio: string) => {
+    if (!inputId || !ratio) return 0;
+    const input = inputs.find(i => i.id === parseInt(inputId));
+    if (!input) return 0;
+    return (parseFloat(input.costPerUnit) / parseFloat(ratio)).toFixed(2);
+  };
+
+  if (productsError) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Failed to Load Products</h2>
-        <p className="text-muted-foreground mb-6">
-          {productsError.message || 'An error occurred while loading products'}
-        </p>
-        <Button onClick={() => refetch()}>Try Again</Button>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <AlertCircle className="w-12 h-12 text-red-500" />
+        <h2 className="text-xl font-semibold">Failed to Load Products</h2>
+        <p className="text-muted-foreground">{productsError.message}</p>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
@@ -212,149 +213,183 @@ export default function Products() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Package className="w-8 h-8" />
-            Products
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your products with cost and margin tracking
-          </p>
+          <h1 className="text-3xl font-bold">Products</h1>
+          <p className="text-muted-foreground mt-1">Manage your finished products and track margins</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()} className="gap-2">
-              <Plus className="w-4 h-4" />
+            <Button onClick={() => {
+              setForm(INITIAL_FORM);
+              setIsEditing(false);
+              setEditingId(null);
+            }}>
+              <Plus className="w-4 h-4 mr-2" />
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>
-                {isEditing ? 'Edit Product' : 'Add New Product'}
-              </DialogTitle>
+              <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               <DialogDescription>
-                Enter product details including cost and selling price
+                {isEditing ? 'Update product details' : 'Create a new product with cost and pricing information'}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Product Name */}
-              <div>
-                <label className="text-sm font-medium">Product Name *</label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g., Coffee Beans"
-                />
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Product Name *</label>
+                  <Input
+                    placeholder="e.g., Capsules"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">SKU</label>
+                  <Input
+                    placeholder="e.g., CAP-001"
+                    value={form.sku}
+                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                  />
+                </div>
               </div>
 
-              {/* Description */}
               <div>
                 <label className="text-sm font-medium">Description</label>
                 <Textarea
+                  placeholder="Product description"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Product description"
                   rows={2}
                 />
               </div>
 
-              {/* SKU */}
-              <div>
-                <label className="text-sm font-medium">SKU</label>
-                <Input
-                  value={form.sku}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                  placeholder="e.g., CB-001"
-                />
-              </div>
-
-              {/* Cost Per Unit */}
-              <div>
-                <label className="text-sm font-medium">Cost Per Unit (ZAR) *</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.costPerUnit}
-                  onChange={(e) => setForm({ ...form, costPerUnit: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* Selling Price */}
-              <div>
-                <label className="text-sm font-medium">Selling Price (ZAR) *</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.sellingPrice}
-                  onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* Profit Margin Preview */}
-              {costPerUnit > 0 && sellingPrice > 0 && (
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Profit Per Unit:</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      ZAR {profitPerUnit.toFixed(2)}
-                    </span>
+              {/* Input Linking */}
+              <div className="space-y-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm font-medium text-blue-900">Link to Raw Material (Optional)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Select Input</label>
+                    <Select value={form.inputId} onValueChange={(value) => setForm({ ...form, inputId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose input..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {inputs.map((input) => (
+                          <SelectItem key={input.id} value={input.id.toString()}>
+                            {input.name} ({input.costPerUnit} per {input.unit})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-medium">Margin %:</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {profitMarginPercent}%
-                    </span>
+                  <div>
+                    <label className="text-sm font-medium">Conversion Ratio</label>
+                    <Input
+                      placeholder="e.g., 1 (1kg makes 1 product)"
+                      type="number"
+                      step="0.01"
+                      value={form.conversionRatio}
+                      onChange={(e) => setForm({ ...form, conversionRatio: e.target.value })}
+                      disabled={!form.inputId}
+                    />
                   </div>
                 </div>
-              )}
-
-              {/* Current Stock */}
-              <div>
-                <label className="text-sm font-medium">Current Stock</label>
-                <Input
-                  type="number"
-                  value={form.currentStock}
-                  onChange={(e) => setForm({ ...form, currentStock: e.target.value })}
-                  placeholder="0"
-                />
+                {form.inputId && form.conversionRatio && (
+                  <div className="text-xs text-blue-700 bg-white p-2 rounded">
+                    Input cost per product: {calculateInputCost(form.inputId, form.conversionRatio)} 
+                  </div>
+                )}
               </div>
 
-              {/* Low Stock Threshold */}
-              <div>
-                <label className="text-sm font-medium">Low Stock Threshold</label>
-                <Input
-                  type="number"
-                  value={form.lowStockThreshold}
-                  onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })}
-                  placeholder="10"
-                />
+              {/* Pricing */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Cost Per Unit *</label>
+                  <Input
+                    placeholder="0.00"
+                    type="number"
+                    step="0.01"
+                    value={form.costPerUnit}
+                    onChange={(e) => setForm({ ...form, costPerUnit: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Selling Price *</label>
+                  <Input
+                    placeholder="0.00"
+                    type="number"
+                    step="0.01"
+                    value={form.sellingPrice}
+                    onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Margin %</label>
+                  <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-sm font-medium">
+                    {calculateMargin(parseFloat(form.costPerUnit) || 0, parseFloat(form.sellingPrice) || 0)}%
+                  </div>
+                </div>
               </div>
 
-              {/* Unit */}
-              <div>
-                <label className="text-sm font-medium">Unit</label>
-                <Input
-                  value={form.unit}
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  placeholder="e.g., kg, pieces"
-                />
+              {/* Stock */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Current Stock</label>
+                  <Input
+                    placeholder="0"
+                    type="number"
+                    value={form.currentStock}
+                    onChange={(e) => setForm({ ...form, currentStock: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Low Stock Threshold</label>
+                  <Input
+                    placeholder="10"
+                    type="number"
+                    value={form.lowStockThreshold}
+                    onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Unit</label>
+                  <Select value={form.unit || 'units'} onValueChange={(value) => setForm({ ...form, unit: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="units">Units</SelectItem>
+                      <SelectItem value="kg">Kilograms</SelectItem>
+                      <SelectItem value="liters">Liters</SelectItem>
+                      <SelectItem value="grams">Grams</SelectItem>
+                      <SelectItem value="ml">Milliliters</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {/* Submit Button */}
-              <Button
-                onClick={handleSubmit}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="w-full"
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? 'Saving...'
-                  : isEditing
-                  ? 'Update Product'
-                  : 'Add Product'}
-              </Button>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {isEditing ? 'Update Product' : 'Create Product'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setForm(INITIAL_FORM);
+                    setIsEditing(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -363,110 +398,93 @@ export default function Products() {
       {/* Summary Cards */}
       {valuation && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-card rounded-lg border">
-            <p className="text-sm text-muted-foreground mb-1">Total Products</p>
-            <p className="text-2xl font-bold">{valuation.summary.productCount}</p>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Products</p>
+            <p className="text-2xl font-bold">{products.length}</p>
           </div>
-          <div className="p-4 bg-card rounded-lg border">
-            <p className="text-sm text-muted-foreground mb-1">Total Cost Value</p>
-            <p className="text-2xl font-bold">ZAR {valuation.summary.totalCostValue.toFixed(2)}</p>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Stock Value (Cost)</p>
+            <p className="text-2xl font-bold">{valuation.summary.totalCostValue.toFixed(2)}</p>
           </div>
-          <div className="p-4 bg-card rounded-lg border">
-            <p className="text-sm text-muted-foreground mb-1">Total Selling Value</p>
-            <p className="text-2xl font-bold">ZAR {valuation.summary.totalSellingValue.toFixed(2)}</p>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Stock Value (Selling)</p>
+            <p className="text-2xl font-bold">{valuation.summary.totalSellingValue.toFixed(2)}</p>
           </div>
-          <div className="p-4 bg-card rounded-lg border">
-            <p className="text-sm text-muted-foreground mb-1">Overall Margin</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {valuation.summary.overallMarginPercent}%
-            </p>
+          <div className="bg-card border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Total Profit Potential</p>
+            <p className="text-2xl font-bold text-green-600">{(valuation.summary.totalSellingValue - valuation.summary.totalCostValue).toFixed(2)}</p>
           </div>
         </div>
       )}
 
       {/* Products Table */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="text-muted-foreground">Loading products...</div>
+        <div className="flex items-center justify-center h-40">
+          <p className="text-muted-foreground">Loading products...</p>
         </div>
-      ) : products && products.length > 0 ? (
+      ) : products.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-40 gap-2">
+          <Package className="w-8 h-8 text-muted-foreground" />
+          <p className="text-muted-foreground">No products yet. Create one to get started!</p>
+        </div>
+      ) : (
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Margin %</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead>Input</TableHead>
+                <TableHead>Cost/Unit</TableHead>
+                <TableHead>Selling Price</TableHead>
+                <TableHead>Margin %</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products.map((product: any) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.sku || '-'}</TableCell>
-                  <TableCell className="text-right">ZAR {product.costPerUnit.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">ZAR {product.sellingPrice.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-sm text-muted-foreground">
+                    {product.inputId ? `Linked (${product.conversionRatio}:1)` : 'None'}
+                  </TableCell>
+                  <TableCell>{product.costPerUnit}</TableCell>
+                  <TableCell>{product.sellingPrice}</TableCell>
+                  <TableCell>
                     <span className={cn(
                       'font-semibold',
-                      parseFloat(product.profitMarginPercent) > 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                      parseFloat(calculateMargin(parseFloat(product.costPerUnit), parseFloat(product.sellingPrice))) > 50 ? 'text-green-600' : 'text-orange-600'
                     )}>
-                      {product.profitMarginPercent}%
+                      {calculateMargin(product.costPerUnit, product.sellingPrice)}%
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     <span className={cn(
-                      product.currentStock < (product.lowStockThreshold || 10)
-                        ? 'text-orange-600 dark:text-orange-400 font-semibold'
-                        : ''
+                      product.currentStock <= product.lowStockThreshold ? 'text-red-600 font-semibold' : ''
                     )}>
                       {product.currentStock}
                     </span>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenDialog(product)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteId(product.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
+                  <TableCell className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(product)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteId(product.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
-          <Package className="w-12 h-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Products Yet</h3>
-          <p className="text-muted-foreground mb-6">
-            Start by adding your first product to track costs and margins
-          </p>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Your First Product
-              </Button>
-            </DialogTrigger>
-          </Dialog>
         </div>
       )}
 
@@ -479,14 +497,13 @@ export default function Products() {
               Are you sure you want to delete this product? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
+              onClick={() => deleteId && handleDelete(deleteId)}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              Delete
             </AlertDialogAction>
           </div>
         </AlertDialogContent>

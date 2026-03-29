@@ -145,6 +145,8 @@ export const products = mysqlTable("products", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   sku: varchar("sku", { length: 100 }),
+  inputId: int("inputId"), // Link to input (raw material) used to make this product
+  conversionRatio: decimal("conversionRatio", { precision: 10, scale: 4 }), // e.g., 1kg input makes 100 capsules
   costPerUnit: decimal("costPerUnit", { precision: 10, scale: 2 }).notNull(), // Purchase cost from supplier
   sellingPrice: decimal("sellingPrice", { precision: 10, scale: 2 }).notNull(), // Retail/selling price
   currentStock: int("currentStock").default(0).notNull(),
