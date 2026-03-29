@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, smallint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -294,3 +294,22 @@ export const batchLots = mysqlTable("batchLots", {
 
 export type BatchLot = typeof batchLots.$inferSelect;
 export type InsertBatchLot = typeof batchLots.$inferInsert;
+
+// Alerts - track system alerts for inventory, expiry, deliveries, etc.
+export const alerts = mysqlTable("alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  type: mysqlEnum("type", ["low_stock", "expiring_batch", "late_delivery", "quality_issue", "system"]).notNull(),
+  message: text("message").notNull(),
+  severity: mysqlEnum("severity", ["info", "warning", "critical"]).default("info").notNull(),
+  relatedProductId: int("relatedProductId"),
+  relatedBatchId: int("relatedBatchId"),
+  relatedSupplierId: int("relatedSupplierId"),
+  isRead: smallint("isRead").default(0).notNull(),
+  actionUrl: varchar("actionUrl", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Alert = typeof alerts.$inferSelect;
+export type InsertAlert = typeof alerts.$inferInsert;

@@ -1202,3 +1202,140 @@ export async function getAllSupplierPerformance(workspaceId: number) {
     throw error;
   }
 }
+
+
+// ===== ALERTS =====
+
+export async function getAlerts(workspaceId: number, filters?: { isRead?: boolean; type?: string; severity?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    let query = db.select().from(alerts).where(eq(alerts.workspaceId, workspaceId)) as any;
+
+    if (filters?.isRead !== undefined) {
+      query = query.where(eq(alerts.isRead, filters.isRead ? 1 : 0));
+    }
+    if (filters?.type) {
+      query = query.where(eq(alerts.type, filters.type as any));
+    }
+    if (filters?.severity) {
+      query = query.where(eq(alerts.severity, filters.severity as any));
+    }
+
+    return await query.orderBy(desc(alerts.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get alerts:", error);
+    throw error;
+  }
+}
+
+export async function getUnreadAlerts(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db
+      .select()
+      .from(alerts)
+      .where(and(eq(alerts.workspaceId, workspaceId), eq(alerts.isRead, 0)))
+      .orderBy(desc(alerts.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get unread alerts:", error);
+    throw error;
+  }
+}
+
+export async function createAlert(data: {
+  workspaceId: number;
+  type: "low_stock" | "expiring_batch" | "late_delivery" | "quality_issue" | "system";
+  message: string;
+  severity?: "info" | "warning" | "critical";
+  relatedProductId?: number;
+  relatedBatchId?: number;
+  relatedSupplierId?: number;
+  actionUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db.insert(alerts).values({
+      ...data,
+      severity: data.severity || "info",
+      isRead: 0,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to create alert:", error);
+    throw error;
+  }
+}
+
+export async function markAlertAsRead(alertId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db.update(alerts).set({ isRead: 1 }).where(eq(alerts.id, alertId));
+  } catch (error) {
+    console.error("[Database] Failed to mark alert as read:", error);
+    throw error;
+  }
+}
+
+export async function markAllAlertsAsRead(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db.update(alerts).set({ isRead: 1 }).where(eq(alerts.workspaceId, workspaceId));
+  } catch (error) {
+    console.error("[Database] Failed to mark all alerts as read:", error);
+    throw error;
+  }
+}
+
+export async function deleteAlert(alertId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db.delete(alerts).where(eq(alerts.id, alertId));
+  } catch (error) {
+    console.error("[Database] Failed to delete alert:", error);
+    throw error;
+  }
+}
+
+export async function deleteAlertsByWorkspace(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    return db.delete(alerts).where(eq(alerts.workspaceId, workspaceId));
+  } catch (error) {
+    console.error("[Database] Failed to delete workspace alerts:", error);
+    throw error;
+  }
+}
+
+export async function getAlertById(alertId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { alerts } = await import("../drizzle/schema");
+    const result = await db.select().from(alerts).where(eq(alerts.id, alertId)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get alert by ID:", error);
+    throw error;
+  }
+}

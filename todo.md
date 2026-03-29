@@ -294,3 +294,36 @@
 - [x] Integrated suppliers router into main tRPC router
 - [x] Database migration applied successfully (0010_blue_prowler.sql)
 - [x] All 119 tests passing (8 test files, 0 TypeScript errors)
+
+
+## Phase 27: Build Batch/Lot Management UI Page
+- [x] Create Batches page at /app/batches with batch list and management forms
+- [x] Add form to create new batch with batchNumber, quantity, expiryDate, qualityStatus
+- [x] Implement edit batch form with pre-filled values
+- [x] Add delete batch with confirmation dialog
+- [x] Display batch list with columns: batchNumber, quantity, expiryDate, qualityStatus, actions
+- [x] Add filter by quality status and product
+- [x] Show expiry date warnings (red for expired, yellow for expiring soon)
+- [x] Add sidebar link to Batches page
+- [x] Batches page fully functional with real-time expiry tracking
+
+## Phase 28: Create Supplier Performance Dashboard
+- [x] Create SupplierPerformance page at /app/supplier-performance
+- [x] Display supplier list with performance metrics (on-time delivery %, quality issues, rating)
+- [x] Add charts: on-time delivery trend, quality issues over time, supplier ratings
+- [x] Show pricing history for each supplier with price trend chart
+- [x] Add supplier comparison table (side-by-side metrics)
+- [x] Implement CSV export for supplier performance data
+- [x] Add filter by date range and supplier
+- [x] Add sidebar link to Supplier Performance page
+- [x] Dashboard shows all supplier KPIs and performance trends
+
+## Phase 29: Implement Inventory Alerts System
+- [x] Create alerts table in database schema with type, severity, isRead fields
+- [x] Add tRPC alerts router with 6 procedures: list, create, getUnread, markAsRead, markAllAsRead, delete, getById
+- [x] Database migration 0011_tearful_nicolaos.sql applied successfully
+- [x] Alerts backend fully integrated with workspace isolation
+- [x] All 119 tests passing (8 test files)
+- [ ] Create alerts history page at /app/alerts (UI component)
+- [ ] Add alerts bell icon to top navigation with unread count
+- [ ] Implement real-time alert notifications (toast notifications)
