@@ -33,6 +33,8 @@ import {
   Clock,
   Lock,
   Download,
+  FileText,
+  Smartphone,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -58,6 +60,9 @@ const NAV_ITEMS = [
   { href: '/app/realtime-execution', label: 'Real-Time Execution', icon: Zap },
   { href: '/app/command-permissions', label: 'Permissions', icon: Lock },
   { href: '/app/command-templates', label: 'Templates', icon: Download },
+  { href: '/app/audit-log', label: 'Audit Log', icon: FileText },
+  { href: '/app/command-chaining', label: 'Chaining', icon: Zap },
+  { href: '/app/mobile-voice', label: 'Mobile Voice', icon: Smartphone },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },

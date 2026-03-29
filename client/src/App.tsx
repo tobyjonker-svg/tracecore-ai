@@ -35,6 +35,9 @@ import { VoiceCommandScheduling } from "./pages/VoiceCommandScheduling";
 import { RealTimeExecution } from "./pages/RealTimeExecution";
 import { CommandPermissions } from "./pages/CommandPermissions";
 import { CommandTemplates } from "./pages/CommandTemplates";
+import { CommandAuditLog } from "./pages/CommandAuditLog";
+import { CommandChaining } from "./pages/CommandChaining";
+import { MobileVoiceInterface } from "./pages/MobileVoiceInterface";
 import { OrdersComplete } from "./pages/OrdersComplete";
 import { ProductionComplete } from "./pages/ProductionComplete";
 import { ShipmentsComplete } from "./pages/ShipmentsComplete";
@@ -89,6 +92,9 @@ function DashboardRouter() {
         <Route path="/app/realtime-execution" component={RealTimeExecution} />
         <Route path="/app/command-permissions" component={CommandPermissions} />
         <Route path="/app/command-templates" component={CommandTemplates} />
+        <Route path="/app/audit-log" component={CommandAuditLog} />
+        <Route path="/app/command-chaining" component={CommandChaining} />
+        <Route path="/app/mobile-voice" component={MobileVoiceInterface} />
         <Route path="/orders-complete" component={OrdersComplete} />
         <Route path="/production-complete" component={ProductionComplete} />
         <Route path="/shipments-complete" component={ShipmentsComplete} />
