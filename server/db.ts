@@ -249,6 +249,35 @@ export async function createPayment(payment: InsertPayment) {
 /**
  * Get workspace with payment info
  */
+export async function createWorkspace(userId: number, name: string = 'My Workspace') {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create workspace: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.insert(workspaces).values({
+      userId,
+      name,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Get the created workspace
+    const workspace = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.userId, userId))
+      .limit(1);
+
+    return workspace.length > 0 ? workspace[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to create workspace:", error);
+    throw error;
+  }
+}
+
 export async function getWorkspaceByUserId(userId: number) {
   const db = await getDb();
   if (!db) {

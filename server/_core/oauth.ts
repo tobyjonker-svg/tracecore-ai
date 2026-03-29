@@ -59,6 +59,17 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
+      // Get the user to get their ID
+      const userRecord = await db.getUserByOpenId(`local-${email}`);
+      if (userRecord) {
+        // Check if user already has a workspace
+        const existingWorkspace = await db.getWorkspaceByUserId(userRecord.id);
+        if (!existingWorkspace) {
+          // Create a workspace for the user
+          await db.createWorkspace(userRecord.id, `${name || email.split('@')[0]}'s Workspace`);
+        }
+      }
+
       // Create session token
       const sessionToken = await sdk.createSessionToken(`local-${email}`, {
         name: name || email.split('@')[0],

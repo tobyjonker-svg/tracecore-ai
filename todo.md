@@ -215,3 +215,8 @@
 - [x] Products page crashes 2 seconds after loading - Fixed: getDb() was checking process.env.DATABASE_URL instead of ENV.databaseUrl
 - [x] Changed getDb() to use ENV.databaseUrl from server/_core/env.ts
 - [x] All 113 tests passing with database fix
+
+- [x] Fixed Products page 401 UNAUTHORIZED error - Root cause: user had no workspace after local sign-in
+- [x] Added createWorkspace() function to server/db.ts
+- [x] Updated local sign-in endpoint to create workspace for user when they sign in
+- [x] All 113 tests passing with workspace creation fix
