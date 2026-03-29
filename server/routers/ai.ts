@@ -3,7 +3,6 @@ import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 import { transcribeAudio } from "../_core/voiceTranscription";
 
-
 export const aiRouter = router({
   /**
    * Chat with AI - send message and get response
@@ -67,7 +66,7 @@ export const aiRouter = router({
           language: input.language,
         });
 
-        if ('error' in result) {
+        if ("error" in result) {
           return {
             success: false,
             error: result.error,
@@ -77,7 +76,7 @@ export const aiRouter = router({
         return {
           success: true,
           text: result.text,
-          language: result.language || 'en',
+          language: result.language || "en",
         };
       } catch (error) {
         console.error("[Transcription Error]", error);
@@ -89,7 +88,7 @@ export const aiRouter = router({
     }),
 
   /**
-   * Execute voice command
+   * Execute voice command with NLP parsing
    */
   executeCommand: protectedProcedure
     .input(
@@ -100,68 +99,69 @@ export const aiRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        // Parse command and execute
         const commandLower = input.command.toLowerCase();
+        const words = commandLower.split(/\s+/);
 
-        // Command handlers
-        if (
-          commandLower.includes("add product") ||
-          commandLower.includes("create product")
-        ) {
-          return {
-            success: true,
-            action: "add_product",
-            message: "Ready to add a new product. What is the product name?",
-          };
+        // Intent parsing with regex patterns
+        const intents: Record<string, RegExp> = {
+          add_product: /add|create.*product/,
+          create_order: /create|new.*order|order.*for/,
+          update_status: /update|mark.*status|mark.*as/,
+          check_inventory: /inventory|stock|check.*stock/,
+          sales_report: /sales|revenue|report/,
+          list_suppliers: /list|show.*supplier|suppliers/,
+          production_run: /production|start.*run|create.*run/,
+          shipment: /ship|shipment|track/,
+        };
+
+        let matchedIntent: string | null = null;
+        for (const [intent, pattern] of Object.entries(intents)) {
+          if (pattern.test(commandLower)) {
+            matchedIntent = intent;
+            break;
+          }
         }
 
-        if (
-          commandLower.includes("create order") ||
-          commandLower.includes("new order")
-        ) {
-          return {
-            success: true,
-            action: "create_order",
-            message: "Ready to create an order. What is the customer name?",
-          };
+        // Extract parameters from command
+        const parameters: Record<string, string> = {};
+        if (commandLower.includes("for")) {
+          const forIndex = words.indexOf("for");
+          if (forIndex !== -1) {
+            parameters.target = words.slice(forIndex + 1).join(" ");
+          }
         }
 
-        if (
-          commandLower.includes("update status") ||
-          commandLower.includes("mark as")
-        ) {
-          return {
-            success: true,
-            action: "update_status",
-            message: "What would you like to update the status to?",
-          };
-        }
+        // Command execution with context
+        const responses: Record<string, string> = {
+          add_product:
+            "Ready to add a new product. What is the product name and cost?",
+          create_order:
+            "Creating order. Who is the customer and what products do they need?",
+          update_status:
+            "Which item would you like to update and what status?",
+          check_inventory:
+            "Checking inventory levels across all products...",
+          sales_report:
+            "Generating sales analytics for the current period...",
+          list_suppliers:
+            "Retrieving supplier list with performance metrics...",
+          production_run:
+            "Starting production run. Which product and quantity?",
+          shipment: "Processing shipment. Which order and carrier?",
+        };
 
-        if (
-          commandLower.includes("inventory") ||
-          commandLower.includes("stock")
-        ) {
+        if (matchedIntent && responses[matchedIntent]) {
           return {
             success: true,
-            action: "check_inventory",
-            message: "Fetching inventory information...",
-          };
-        }
-
-        if (
-          commandLower.includes("sales") ||
-          commandLower.includes("revenue")
-        ) {
-          return {
-            success: true,
-            action: "sales_report",
-            message: "Generating sales report...",
+            action: matchedIntent,
+            message: responses[matchedIntent],
+            parameters,
           };
         }
 
         return {
           success: false,
-          message: `I didn't understand that command. Try: "Add product", "Create order", "Update status", "Check inventory", or "Show sales"`,
+          message: `I didn't understand that command. Try: "Add product", "Create order", "Update status", "Check inventory", "Show sales", or "List suppliers"`,
         };
       } catch (error) {
         console.error("[Command Execution Error]", error);
@@ -175,7 +175,7 @@ export const aiRouter = router({
   /**
    * Get available commands
    */
-  getCommands: protectedProcedure.query(async ({ ctx }) => {
+  getCommands: protectedProcedure.query(async () => {
     return {
       commands: [
         {
@@ -207,6 +207,24 @@ export const aiRouter = router({
           name: "Sales Report",
           description: "Generate sales analytics",
           examples: ["Show sales", "Revenue report"],
+        },
+        {
+          id: "list_suppliers",
+          name: "List Suppliers",
+          description: "View all suppliers",
+          examples: ["List suppliers", "Show suppliers"],
+        },
+        {
+          id: "production_run",
+          name: "Production Run",
+          description: "Start a production run",
+          examples: ["Start production", "New production run"],
+        },
+        {
+          id: "shipment",
+          name: "Shipment",
+          description: "Process shipment",
+          examples: ["Ship order", "Track shipment"],
         },
       ],
     };

@@ -29,6 +29,7 @@ import {
   CreditCard,
   TrendingUp,
   Users,
+  Mic,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -47,6 +48,7 @@ const NAV_ITEMS = [
   { href: '/supplier-performance', label: 'Supplier Performance', icon: TrendingUp },
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/app/ai-chat', label: 'AI Chat', icon: Sparkles },
+  { href: '/app/voice-commands', label: 'Voice Commands', icon: Mic },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },
