@@ -34,17 +34,21 @@ function isSecureRequest(req: Request) {
 export function getSessionCookieOptions(
   req: Request
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
-  // Session cookie configuration for OAuth flows
-  // Use SameSite='lax' for better mobile compatibility
-  // SameSite='none' requires Secure=true but can be blocked on mobile
+  // For OAuth flows across auth.manus.im → app domain, we need:
+  // - SameSite: 'none' (allows cross-site cookies)
+  // - Secure: true (required when SameSite=none)
+  // - HttpOnly: true (prevents JavaScript access)
   
   const isSecure = isSecureRequest(req);
+  
+  // Force secure=true for production to support OAuth cross-site cookies
+  // In development (localhost), allow insecure cookies
   const secure = isSecure || process.env.NODE_ENV === 'production';
 
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "lax", // Better mobile support than 'none'
+    sameSite: "none",
     secure: secure,
   };
 }

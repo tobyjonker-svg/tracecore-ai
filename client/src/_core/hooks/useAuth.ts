@@ -1,64 +1,102 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { useCallback, useEffect } from "react";
+import { TRPCClientError } from "@trpc/client";
+import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
+  redirectPath?: string;
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false } = options ?? {};
+  const { redirectOnUnauthenticated = false, redirectPath = "/" } =
+    options ?? {};
+  const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: 1,
     retryDelay: 1000,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Don't treat errors as fatal - user might still be authenticated
+    throwOnError: false,
   });
 
-  const logoutMutation = trpc.auth.logout.useMutation();
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      utils.auth.me.setData(undefined, null);
+    },
+  });
 
   const logout = useCallback(async () => {
     try {
       await logoutMutation.mutateAsync();
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (error: unknown) {
+      if (
+        error instanceof TRPCClientError &&
+        error.data?.code === "UNAUTHORIZED"
+      ) {
+        return;
+      }
+      throw error;
     } finally {
-      // Invalidate auth query to force refetch
-      meQuery.refetch();
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
     }
-  }, [logoutMutation, meQuery]);
+  }, [logoutMutation, utils]);
 
-  // Handle redirect to login if needed
-  useEffect(() => {
-    if (!redirectOnUnauthenticated) return;
-    if (typeof window === "undefined") return;
-
-    // Only redirect if auth check is complete AND user is not authenticated
-    const isAuthCheckComplete = meQuery.isFetched;
-    const isAuthenticated = Boolean(meQuery.data);
-
-    if (!isAuthCheckComplete) return; // Still loading
-    if (isAuthenticated) return; // User is authenticated
-    if (window.location.href.includes("auth.manus.im")) return; // Already on auth page
-    if (window.location.href.includes("/api/oauth")) return; // OAuth callback in progress
-
-    // Redirect to login
-    (async () => {
+  const state = useMemo(() => {
+    // Try to restore from localStorage if query fails
+    const userData = meQuery.data ?? (() => {
       try {
-        const loginUrl = await getLoginUrl();
-        window.location.href = loginUrl;
-      } catch (error) {
-        console.error("Failed to get login URL:", error);
+        const stored = localStorage.getItem("manus-runtime-user-info");
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
       }
     })();
-  }, [redirectOnUnauthenticated, meQuery.isFetched, meQuery.data]);
+    
+    if (userData) {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(userData)
+      );
+    }
+    
+    return {
+      user: userData ?? null,
+      loading: meQuery.isLoading || logoutMutation.isPending,
+      error: meQuery.error ?? logoutMutation.error ?? null,
+      isAuthenticated: Boolean(userData),
+    };
+  }, [
+    meQuery.data,
+    meQuery.error,
+    meQuery.isLoading,
+    logoutMutation.error,
+    logoutMutation.isPending,
+  ]);
+
+  useEffect(() => {
+    if (!redirectOnUnauthenticated) return;
+    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (state.user) return;
+    if (typeof window === "undefined") return;
+    if (window.location.pathname === redirectPath) return;
+    // Prevent redirect loop - don't redirect if already on auth page
+    if (window.location.href.includes('auth.manus.im')) return;
+    if (window.location.href.includes('/api/oauth')) return;
+
+    window.location.href = redirectPath
+  }, [
+    redirectOnUnauthenticated,
+    redirectPath,
+    logoutMutation.isPending,
+    meQuery.isLoading,
+    state.user,
+  ]);
 
   return {
-    user: meQuery.data ?? null,
-    loading: meQuery.isLoading,
-    error: meQuery.error,
-    isAuthenticated: Boolean(meQuery.data),
+    ...state,
     refresh: () => meQuery.refetch(),
     logout,
   };
