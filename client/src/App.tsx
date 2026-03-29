@@ -38,6 +38,9 @@ import { CommandTemplates } from "./pages/CommandTemplates";
 import { CommandAuditLog } from "./pages/CommandAuditLog";
 import { CommandChaining } from "./pages/CommandChaining";
 import { MobileVoiceInterface } from "./pages/MobileVoiceInterface";
+import { RealtimeNotifications } from "./pages/RealtimeNotifications";
+import { PredictiveAnalytics } from "./pages/PredictiveAnalytics";
+import { IntegrationHub } from "./pages/IntegrationHub";
 import { OrdersComplete } from "./pages/OrdersComplete";
 import { ProductionComplete } from "./pages/ProductionComplete";
 import { ShipmentsComplete } from "./pages/ShipmentsComplete";
@@ -95,6 +98,9 @@ function DashboardRouter() {
         <Route path="/app/audit-log" component={CommandAuditLog} />
         <Route path="/app/command-chaining" component={CommandChaining} />
         <Route path="/app/mobile-voice" component={MobileVoiceInterface} />
+        <Route path="/app/realtime-notifications" component={RealtimeNotifications} />
+        <Route path="/app/predictive-analytics" component={PredictiveAnalytics} />
+        <Route path="/app/integration-hub" component={IntegrationHub} />
         <Route path="/orders-complete" component={OrdersComplete} />
         <Route path="/production-complete" component={ProductionComplete} />
         <Route path="/shipments-complete" component={ShipmentsComplete} />
