@@ -215,7 +215,7 @@ export function Inputs() {
               <div>
                 <label className="block text-sm font-medium mb-1">Unit Type</label>
                 <select
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 >

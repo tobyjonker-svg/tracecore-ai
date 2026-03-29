@@ -142,7 +142,7 @@ export function ImportExportMVP() {
             <select
               value={importType}
               onChange={(e) => setImportType(e.target.value as any)}
-              className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background"
+              className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background text-foreground"
             >
               <option value="products">Products</option>
               <option value="orders">Orders</option>

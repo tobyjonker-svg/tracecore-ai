@@ -267,8 +267,8 @@ export default function Products() {
               </div>
 
               {/* Input Linking */}
-              <div className="space-y-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm font-medium text-blue-900">Link to Raw Material (Optional)</p>
+              <div className="space-y-3 p-3 bg-accent rounded-lg border border-accent/30">
+                <p className="text-sm font-medium text-accent-foreground">Link to Raw Material (Optional)</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Select Input</label>
@@ -299,7 +299,7 @@ export default function Products() {
                   </div>
                 </div>
                 {form.inputId && form.conversionRatio && (
-                  <div className="text-xs text-blue-700 bg-white p-2 rounded">
+                  <div className="text-xs text-accent-foreground bg-accent/20 p-2 rounded">
                     Input cost per product: {calculateInputCost(form.inputId, form.conversionRatio)} 
                   </div>
                 )}
