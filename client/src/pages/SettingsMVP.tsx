@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, User, Lock, Bell, Crown, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
+import { trpc } from '@/lib/trpc';
 
 export function SettingsMVP() {
   const { user } = useAuth();
@@ -13,6 +15,10 @@ export function SettingsMVP() {
   const [userRole, setUserRole] = useState('admin');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [alertNotifications, setAlertNotifications] = useState(true);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+
+  // Fetch user's profile picture
+  const { data: profileData } = trpc.profile.getProfilePicture.useQuery();
 
   const handleSaveWorkspace = () => {
     toast.success('Workspace settings saved');
@@ -20,6 +26,11 @@ export function SettingsMVP() {
 
   const handleSaveNotifications = () => {
     toast.success('Notification preferences saved');
+  };
+
+  const handleProfilePictureUpload = (url: string) => {
+    setProfilePictureUrl(url);
+    toast.success('Profile picture updated successfully');
   };
 
   return (
@@ -32,6 +43,23 @@ export function SettingsMVP() {
         </h1>
         <p className="text-muted-foreground mt-1">Manage workspace and user preferences</p>
       </div>
+
+      {/* Profile Picture */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Profile Picture
+          </CardTitle>
+          <CardDescription>Upload and manage your profile picture</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProfilePictureUpload
+            currentImageUrl={profileData?.profilePictureUrl || profilePictureUrl}
+            onUploadComplete={handleProfilePictureUpload}
+          />
+        </CardContent>
+      </Card>
 
       {/* Workspace Settings */}
       <Card>
