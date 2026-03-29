@@ -22,6 +22,11 @@ import { InventoryLog } from "./pages/InventoryLog";
 import { Batches } from "./pages/Batches";
 import { SupplierPerformance } from "./pages/SupplierPerformance";
 import { Alerts } from "./pages/Alerts";
+import { Dashboard } from "./pages/Dashboard";
+import { SettingsMVP } from "./pages/SettingsMVP";
+import { ReportsMVP } from "./pages/ReportsMVP";
+import { ImportExportMVP } from "./pages/ImportExportMVP";
+import { SecurityMVP } from "./pages/SecurityMVP";
 import Orders from "./pages/Orders";
 import ProductionRuns from "./pages/ProductionRuns";
 import InventoryActivity from "./pages/InventoryActivity";
@@ -46,7 +51,8 @@ function DashboardRouter() {
   return (
     <DashboardLayout>
       <Switch>
-        <Route path="/app" component={Home} />
+        <Route path="/app" component={Dashboard} />
+        <Route path="/home" component={Home} />
         <Route path="/" component={Home} />
         <Route path="/suppliers" component={Suppliers} />
         <Route path="/inputs" component={Inputs} />
@@ -60,7 +66,10 @@ function DashboardRouter() {
         <Route path="/inventory" component={InventoryActivity} />
         <Route path="/reports" component={Reports} />
         <Route path="/profit-margin" component={ProfitMarginReport} />
-        <Route path="/settings" component={Settings} />
+        <Route path="/settings" component={SettingsMVP} />
+        <Route path="/reports-mvp" component={ReportsMVP} />
+        <Route path="/import-export" component={ImportExportMVP} />
+        <Route path="/security" component={SecurityMVP} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/admin/payments" component={AdminPaymentDashboard} />
         <Route path="/admin/analytics" component={WorkflowAnalytics} />
