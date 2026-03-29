@@ -544,3 +544,108 @@ export async function getInventoryValuation(workspaceId: number) {
     profitMarginPercent: ((parseFloat(p.sellingPrice.toString()) - parseFloat(p.costPerUnit.toString())) / parseFloat(p.sellingPrice.toString()) * 100).toFixed(2),
   }));
 }
+
+
+// ──────────────────────────────────────────────────────────────
+// Inputs (Raw Materials) Queries
+// ──────────────────────────────────────────────────────────────
+
+import { inputs, Input, InsertInput } from "../drizzle/schema";
+
+export async function getInputsByWorkspace(workspaceId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get inputs: database not available");
+    return [];
+  }
+
+  try {
+    return await db
+      .select()
+      .from(inputs)
+      .where(eq(inputs.workspaceId, workspaceId))
+      .orderBy(desc(inputs.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get inputs:", error);
+    throw error;
+  }
+}
+
+export async function getInputById(inputId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get input: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(inputs)
+      .where(eq(inputs.id, inputId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get input:", error);
+    throw error;
+  }
+}
+
+export async function createInput(input: InsertInput) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create input: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.insert(inputs).values(input);
+    const createdInput = await db
+      .select()
+      .from(inputs)
+      .where(eq(inputs.workspaceId, input.workspaceId))
+      .orderBy(desc(inputs.createdAt))
+      .limit(1);
+
+    return createdInput.length > 0 ? createdInput[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to create input:", error);
+    throw error;
+  }
+}
+
+export async function updateInput(
+  inputId: number,
+  updates: Partial<InsertInput>
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update input: database not available");
+    return undefined;
+  }
+
+  try {
+    await db.update(inputs).set(updates).where(eq(inputs.id, inputId));
+    return await getInputById(inputId);
+  } catch (error) {
+    console.error("[Database] Failed to update input:", error);
+    throw error;
+  }
+}
+
+export async function deleteInput(inputId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete input: database not available");
+    return undefined;
+  }
+
+  try {
+    await db.delete(inputs).where(eq(inputs.id, inputId));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete input:", error);
+    throw error;
+  }
+}

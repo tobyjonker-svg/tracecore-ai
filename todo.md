@@ -220,3 +220,48 @@
 - [x] Added createWorkspace() function to server/db.ts
 - [x] Updated local sign-in endpoint to create workspace for user when they sign in
 - [x] All 113 tests passing with workspace creation fix
+
+
+## Phase 23: Complete Supply Chain Tracking (Inputs → Products → Profit)
+
+### Database Schema Updates
+- [x] Created inputs table in drizzle/schema.ts with: id, workspaceId, name, description, supplierId, costPerUnit, unit, currentStock, lowStockThreshold
+- [x] Ran pnpm db:push - migration applied successfully (0007_bouncy_aqueduct.sql)
+- [x] Inputs table now tracks raw materials (powder, oils, capsules, etc.) purchased from suppliers
+
+### Inputs Management Page
+- [x] Created tRPC inputs router with 5 CRUD procedures: list, create, update, delete, getById
+- [x] Created Inputs page at /app/inputs with add/edit/delete form
+- [x] Shows input name, description, cost per unit, unit type (kg, liters, units, etc.)
+- [x] Displays list of all inputs with edit/delete action buttons
+- [x] Integrated inputs router into main tRPC router
+- [x] Fixed App.tsx import to use named import for Inputs component
+- [ ] Add sidebar link to Inputs page
+
+### Products Page Updates
+- [ ] Update Products form to link to inputs (dropdown to select which input is used)
+- [ ] Add conversion_ratio field (e.g., "1kg input makes 100 capsules")
+- [ ] Calculate input_cost_per_unit automatically (input cost / conversion ratio)
+- [ ] Show input cost in product list and edit form
+- [ ] Update margin calculation to include input cost
+
+### Profit Margin Report Enhancement
+- [ ] Add "Input Cost" column showing cost per unit from linked input
+- [ ] Add "Product Selling Price" column
+- [ ] Add "Profit Per Unit" column (selling price - input cost)
+- [ ] Add "Margin %" column (profit / selling price * 100)
+- [ ] Add summary showing total input value, total product value, total profit
+- [ ] Add filter by input type to see which inputs are most profitable
+
+### Testing
+- [x] All 113 tests passing with inputs router integration
+- [ ] Write tests for inputs router (CRUD operations)
+- [ ] Write tests for supply chain calculations (input cost → product profit)
+- [ ] Write tests for profit margin report with inputs included
+
+### End-to-End Testing
+- [ ] Add an input (e.g., "Powder", 2000 rand per kg)
+- [ ] Add a product linked to that input (e.g., "Capsules", 5000 rand, 1kg makes 100 capsules)
+- [ ] Verify product shows input cost (20 rand per capsule)
+- [ ] Verify profit margin report shows full chain
+- [ ] Test editing input cost and verify product margins update

@@ -16,7 +16,7 @@ import DashboardLayout from "./components/DashboardLayout";
 // Pages
 import Home from "./pages/Home";
 import Suppliers from "./pages/Suppliers";
-import Inputs from "./pages/Inputs";
+import { Inputs } from "./pages/Inputs";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import ProductionRuns from "./pages/ProductionRuns";

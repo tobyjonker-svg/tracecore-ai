@@ -1,0 +1,21 @@
+{
+  "query": "SELECT * FROM workspaces LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user b3ERovtMHsFUhEw.root --database JqzfJcQaypCLFt4Ngi48YW --execute SELECT * FROM workspaces LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "name": "MycoAlchemy",
+      "businessType": "Custom",
+      "logo": "NULL",
+      "branding": "NULL",
+      "tier": "free",
+      "createdAt": "2026-03-28 19:49:47",
+      "updatedAt": "2026-03-28 22:13:01"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tname\tbusinessType\tlogo\tbranding\ttier\tcreatedAt\tupdatedAt\n1\t1\tMycoAlchemy\tCustom\tNULL\tNULL\tfree\t2026-03-28 19:49:47\t2026-03-28 22:13:01\n",
+  "stderr": "",
+  "execution_time_ms": 343
+}

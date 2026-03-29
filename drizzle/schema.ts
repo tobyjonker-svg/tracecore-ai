@@ -157,6 +157,24 @@ export const products = mysqlTable("products", {
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
 
+// Inputs (Raw Materials) - track raw materials purchased from suppliers
+export const inputs = mysqlTable("inputs", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  supplierId: int("supplierId"),
+  costPerUnit: decimal("costPerUnit", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("kg").notNull(),
+  currentStock: decimal("currentStock", { precision: 12, scale: 4 }).default("0").notNull(),
+  lowStockThreshold: decimal("lowStockThreshold", { precision: 12, scale: 4 }).default("10"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Input = typeof inputs.$inferSelect;
+export type InsertInput = typeof inputs.$inferInsert;
+
 // Suppliers - track where products are sourced from
 export const suppliers = mysqlTable("suppliers", {
   id: int("id").autoincrement().primaryKey(),

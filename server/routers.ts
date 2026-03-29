@@ -6,6 +6,7 @@ import { billingRouter } from "./routers/billing";
 import { paymentRouter } from "./routers/payment";
 import { workflowRouter } from "./routers/workflow";
 import { productsRouter } from "./routers/products";
+import { inputsRouter } from "./routers/inputs";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -24,6 +25,7 @@ export const appRouter = router({
   payment: paymentRouter,
   workflow: workflowRouter,
   products: productsRouter,
+  inputs: inputsRouter,
 });
 
 export type AppRouter = typeof appRouter;
