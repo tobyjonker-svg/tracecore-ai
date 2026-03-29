@@ -63,14 +63,14 @@ function DashboardRouter() {
 }
 
 function Router() {
-  // Main router - public pages first, then dashboard
-  // IMPORTANT: Payment route MUST come before DashboardRouter catch-all
+  // Main router - specific routes first, then catch-all
+  // IMPORTANT: Landing route MUST be last because path="/" matches all paths in wouter
   return (
     <Switch>
-      <Route path="/" component={Landing} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/payment" component={PaymentRoute} />
       <Route component={DashboardRouter} />
+      <Route path="/" component={Landing} />
     </Switch>
   );
 }
