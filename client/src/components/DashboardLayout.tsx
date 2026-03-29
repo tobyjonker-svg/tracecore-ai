@@ -31,6 +31,8 @@ import {
   Users,
   Mic,
   Clock,
+  Lock,
+  Download,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -53,6 +55,9 @@ const NAV_ITEMS = [
   { href: '/app/voice-analytics', label: 'Voice Analytics', icon: TrendingUp },
   { href: '/app/custom-commands', label: 'Custom Commands', icon: Sparkles },
   { href: '/app/command-scheduling', label: 'Scheduling', icon: Clock },
+  { href: '/app/realtime-execution', label: 'Real-Time Execution', icon: Zap },
+  { href: '/app/command-permissions', label: 'Permissions', icon: Lock },
+  { href: '/app/command-templates', label: 'Templates', icon: Download },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },
