@@ -46,6 +46,7 @@ const NAV_ITEMS = [
   { href: '/batches', label: 'Batch Management', icon: Package },
   { href: '/supplier-performance', label: 'Supplier Performance', icon: TrendingUp },
   { href: '/alerts', label: 'Alerts', icon: Bell },
+  { href: '/app/ai-chat', label: 'AI Chat', icon: Sparkles },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },

@@ -27,6 +27,7 @@ import { SettingsMVP } from "./pages/SettingsMVP";
 import { ReportsMVP } from "./pages/ReportsMVP";
 import { ImportExportMVP } from "./pages/ImportExportMVP";
 import { SecurityMVP } from "./pages/SecurityMVP";
+import { AIChat } from "./pages/AIChat";
 import { OrdersComplete } from "./pages/OrdersComplete";
 import { ProductionComplete } from "./pages/ProductionComplete";
 import { ShipmentsComplete } from "./pages/ShipmentsComplete";
@@ -72,7 +73,8 @@ function DashboardRouter() {
         <Route path="/settings" component={SettingsMVP} />
         <Route path="/reports-mvp" component={ReportsMVP} />
         <Route path="/import-export" component={ImportExportMVP} />
-        <Route path="/security" component={SecurityMVP} />
+        <Route path="/app/security" component={SecurityMVP} />
+        <Route path="/app/ai-chat" component={AIChat} />
         <Route path="/orders-complete" component={OrdersComplete} />
         <Route path="/production-complete" component={ProductionComplete} />
         <Route path="/shipments-complete" component={ShipmentsComplete} />
