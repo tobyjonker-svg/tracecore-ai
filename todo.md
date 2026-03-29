@@ -209,3 +209,9 @@
 - [x] Fixed critical routing bug - moved Landing route to end so /products reaches DashboardRouter
 - [x] Products page now properly renders with DashboardLayout
 - [x] All 113 tests passing with routing fix
+
+
+## Current Issues
+- [x] Products page crashes 2 seconds after loading - Fixed: getDb() was checking process.env.DATABASE_URL instead of ENV.databaseUrl
+- [x] Changed getDb() to use ENV.databaseUrl from server/_core/env.ts
+- [x] All 113 tests passing with database fix
