@@ -625,3 +625,38 @@
 - [ ] Deploy to production
 - [ ] Monitor first 24 hours
 - [ ] Document deployment process
+
+
+---
+
+# PHASE 2: POST-LAUNCH ROADMAP (Automation-First)
+
+## AI Lead Generator (Pro+ Feature)
+- [ ] Design lead generation engine architecture
+- [ ] Implement Google Maps API integration for lead scraping
+- [ ] Add Facebook Business Pages lead extraction
+- [ ] Add Instagram Business Profile scraping
+- [ ] Build lead enrichment pipeline (auto-fill missing data)
+- [ ] Create lead quality scoring system
+- [ ] Add bulk import to Suppliers/Contacts
+- [ ] Build lead filtering and search interface
+- [ ] Add export to CSV/Excel
+- [ ] Create scheduled lead generation jobs
+
+## Automation Features
+- [ ] Automated inventory forecasting based on historical data
+- [ ] Smart supplier recommendations (best price, reliability)
+- [ ] Predictive demand planning
+- [ ] Auto-reorder workflows when stock drops below threshold
+- [ ] Intelligent pricing optimization based on market data
+- [ ] Automated report generation and email delivery
+- [ ] Background task scheduling for all operations
+- [ ] Real-time sync with minimal user intervention
+
+## Philosophy: Automagic with Less Manual Assistance
+- Minimize user configuration
+- Smart defaults for all settings
+- Background processing for heavy tasks
+- Scheduled automation for recurring operations
+- Real-time data sync
+- Intelligent error handling and recovery
