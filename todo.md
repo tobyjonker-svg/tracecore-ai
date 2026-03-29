@@ -265,3 +265,25 @@
 - [ ] Verify product shows input cost (20 rand per capsule)
 - [ ] Verify profit margin report shows full chain
 - [ ] Test editing input cost and verify product margins update
+
+
+## Phase 24: Inventory Activity Log
+- [ ] Create inventory_activity table in schema to track transactions (purchase, sale, adjustment)
+- [ ] Add tRPC router for inventory activities with CRUD procedures
+- [ ] Create Inventory Activity page showing transaction history with timestamps
+- [ ] Add filters by transaction type, date range, product
+- [ ] Implement cost history tracking for trend analysis
+
+## Phase 25: Batch/Lot Tracking
+- [ ] Add batch_number, expiry_date, quality_status fields to products table
+- [ ] Create batch management UI in Products page
+- [ ] Implement expiry date warnings and alerts
+- [ ] Add quality control status tracking (good, defective, quarantine)
+- [ ] Show batch history and traceability
+
+## Phase 26: Supplier Management
+- [ ] Create suppliers table with name, contact, payment_terms fields
+- [ ] Build Suppliers management page with add/edit/delete suppliers
+- [ ] Add pricing history tracking for each supplier
+- [ ] Implement supplier performance metrics (on-time delivery, quality)
+- [ ] Link suppliers to inputs for procurement tracking

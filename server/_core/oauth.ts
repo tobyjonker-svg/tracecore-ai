@@ -1,9 +1,11 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 import { ENV } from "./env";
+
+const COOKIE_NAME = 'session';
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];

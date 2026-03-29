@@ -649,3 +649,156 @@ export async function deleteInput(inputId: number) {
     throw error;
   }
 }
+
+
+// ──────────────────────────────────────────────────────────────
+// Inventory Activity Queries
+// ──────────────────────────────────────────────────────────────
+
+import { gte, lte } from "drizzle-orm";
+
+export async function getInventoryActivities(
+  workspaceId: number,
+  type?: string,
+  productId?: number,
+  startDate?: Date,
+  endDate?: Date
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get inventory activities: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(inventoryActivity)
+      .where(eq(inventoryActivity.workspaceId, workspaceId))
+      .orderBy(desc(inventoryActivity.createdAt));
+
+    let filtered = result;
+    if (type) {
+      filtered = filtered.filter(a => a.type === type);
+    }
+    if (productId) {
+      filtered = filtered.filter(a => a.productId === productId);
+    }
+    if (startDate) {
+      filtered = filtered.filter(a => a.createdAt >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(a => a.createdAt <= endDate);
+    }
+
+    return filtered;
+  } catch (error) {
+    console.error("[Database] Failed to get inventory activities:", error);
+    throw error;
+  }
+}
+
+export async function createInventoryActivity(data: {
+  workspaceId: number;
+  productId: number;
+  type: string;
+  quantity: number;
+  costPerUnit?: number;
+  sellingPrice?: number;
+  supplierId?: number;
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create inventory activity: database not available");
+    return undefined;
+  }
+
+  try {
+    const totalCost = data.costPerUnit ? data.quantity * data.costPerUnit : undefined;
+    const totalValue = data.sellingPrice ? data.quantity * data.sellingPrice : undefined;
+
+    const result = await db.insert(inventoryActivity).values({
+      workspaceId: data.workspaceId,
+      productId: data.productId,
+      type: data.type as any,
+      quantity: data.quantity,
+      costPerUnit: data.costPerUnit ? data.costPerUnit.toString() : undefined,
+      sellingPrice: data.sellingPrice ? data.sellingPrice.toString() : undefined,
+      totalCost: totalCost ? totalCost.toString() : undefined,
+      totalValue: totalValue ? totalValue.toString() : undefined,
+      supplierId: data.supplierId,
+      notes: data.notes,
+    });
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to create inventory activity:", error);
+    throw error;
+  }
+}
+
+export async function getInventoryActivityById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get inventory activity: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(inventoryActivity).where(eq(inventoryActivity.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get inventory activity:", error);
+    throw error;
+  }
+}
+
+export async function deleteInventoryActivity(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete inventory activity: database not available");
+    return undefined;
+  }
+
+  try {
+    await db.delete(inventoryActivity).where(eq(inventoryActivity.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete inventory activity:", error);
+    throw error;
+  }
+}
+
+export async function getInventoryActivitySummary(
+  workspaceId: number,
+  type?: string,
+  startDate?: Date,
+  endDate?: Date
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get inventory activity summary: database not available");
+    return null;
+  }
+
+  try {
+    const activities = await getInventoryActivities(workspaceId, type, undefined, startDate, endDate);
+
+    // Calculate summary statistics
+    const totalQuantity = activities.reduce((sum, a) => sum + a.quantity, 0);
+    const totalCost = activities.reduce((sum, a) => sum + (parseFloat(a.totalCost || '0')), 0);
+    const totalValue = activities.reduce((sum, a) => sum + (parseFloat(a.totalValue || '0')), 0);
+
+    return {
+      totalQuantity,
+      totalCost,
+      totalValue,
+      transactionCount: activities.length,
+      activities,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get inventory activity summary:", error);
+    throw error;
+  }
+}
