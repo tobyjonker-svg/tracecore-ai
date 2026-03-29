@@ -27,6 +27,9 @@ import { SettingsMVP } from "./pages/SettingsMVP";
 import { ReportsMVP } from "./pages/ReportsMVP";
 import { ImportExportMVP } from "./pages/ImportExportMVP";
 import { SecurityMVP } from "./pages/SecurityMVP";
+import { OrdersComplete } from "./pages/OrdersComplete";
+import { ProductionComplete } from "./pages/ProductionComplete";
+import { ShipmentsComplete } from "./pages/ShipmentsComplete";
 import Orders from "./pages/Orders";
 import ProductionRuns from "./pages/ProductionRuns";
 import InventoryActivity from "./pages/InventoryActivity";
@@ -70,6 +73,9 @@ function DashboardRouter() {
         <Route path="/reports-mvp" component={ReportsMVP} />
         <Route path="/import-export" component={ImportExportMVP} />
         <Route path="/security" component={SecurityMVP} />
+        <Route path="/orders-complete" component={OrdersComplete} />
+        <Route path="/production-complete" component={ProductionComplete} />
+        <Route path="/shipments-complete" component={ShipmentsComplete} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/admin/payments" component={AdminPaymentDashboard} />
         <Route path="/admin/analytics" component={WorkflowAnalytics} />
