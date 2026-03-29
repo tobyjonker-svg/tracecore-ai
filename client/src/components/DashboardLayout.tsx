@@ -7,7 +7,7 @@
  * - Auth gating: redirects unauthenticated users to login
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   LayoutDashboard,
@@ -40,6 +40,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { CommandCenter } from './CommandCenter';
 import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const NAV_ITEMS = [
   { href: '/app', label: 'Home', icon: LayoutDashboard },
@@ -68,6 +70,7 @@ const NAV_ITEMS = [
   { href: '/app/integration-hub', label: 'Integrations', icon: Zap },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
+  { href: '/users', label: 'Users', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -76,8 +79,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const { state, dispatch } = useApp();
   const { user, loading, isAuthenticated } = useAuth();
+  
+  // Fetch unread alerts
+  const { data: unreadAlerts = [] } = trpc.alerts.getUnread.useQuery();
 
   // Check if this is a new user flow
   useEffect(() => {
@@ -265,13 +272,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Header Actions */}
           <div className="flex items-center gap-3">
-            {/* Notifications */}
-            <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {(lowStockCount > 0 || pendingOrders > 0) && (
-                <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-            </button>
+            {/* Alerts Dropdown */}
+            <Popover open={alertsOpen} onOpenChange={setAlertsOpen}>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
+                  <Bell className="w-5 h-5 text-muted-foreground" />
+                  {unreadAlerts.length > 0 && (
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="bg-background border border-border rounded-lg">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <h3 className="font-semibold text-foreground">Alerts</h3>
+                    {unreadAlerts.length > 0 && (
+                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
+                        {unreadAlerts.length} new
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Alerts List */}
+                  <div className="max-h-96 overflow-y-auto">
+                    {unreadAlerts.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-muted-foreground">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No new alerts</p>
+                      </div>
+                    ) : (
+                      unreadAlerts.slice(0, 5).map((alert: any) => (
+                        <div key={alert.id} className="px-4 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <div className="text-lg mt-0.5">
+                              {alert.type === 'low_stock' && '📦'}
+                              {alert.type === 'expiring_batch' && '⏰'}
+                              {alert.type === 'late_delivery' && '🚚'}
+                              {alert.type === 'quality_issue' && '⚠️'}
+                              {alert.type === 'system' && '⚙️'}
+                              {!['low_stock', 'expiring_batch', 'late_delivery', 'quality_issue', 'system'].includes(alert.type) && '📢'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{alert.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(alert.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {/* Footer */}
+                  {unreadAlerts.length > 0 && (
+                    <div className="px-4 py-3 border-t border-border">
+                      <button
+                        onClick={() => {
+                          navigate('/alerts');
+                          setAlertsOpen(false);
+                        }}
+                        className="w-full text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                      >
+                        View All Alerts →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* Command Center Button */}
             <button

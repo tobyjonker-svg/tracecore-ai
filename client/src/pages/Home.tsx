@@ -7,7 +7,7 @@
  * - Workflow overview banner
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatDateTime, timeAgo } from '@/lib/store';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -39,6 +39,9 @@ import {
 } from 'recharts';
 import { Link } from 'wouter';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Download, Calendar } from 'lucide-react';
 
 // Mock chart data
 const productionChartData = [
@@ -137,6 +140,7 @@ export default function Home() {
 
   const { state } = useApp();
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
   const onboardingState = getOnboardingState();
 
   const totalProducts = state.products.length;
@@ -178,17 +182,55 @@ export default function Home() {
             </button>
           )}
         </div>
-        <div className="text-right text-xs md:text-sm">
-          <p className="text-xs text-muted-foreground">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-          <p className="text-xs text-primary font-medium mt-0.5">
-            {state.workspace.businessType}
-          </p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
+              <SelectTrigger className="w-32 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const data = JSON.stringify({
+                products: state.products,
+                orders: state.orders,
+                productionRuns: state.productionRuns,
+                inventory: state.inventoryActivity,
+              }, null, 2);
+              const blob = new Blob([data], { type: 'application/json' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+              a.click();
+            }}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <div className="text-right text-xs md:text-sm">
+            <p className="text-xs text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+            <p className="text-xs text-primary font-medium mt-0.5">
+              {state.workspace.businessType}
+            </p>
+          </div>
         </div>
       </div>
 

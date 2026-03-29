@@ -53,6 +53,7 @@ import AIAssistant from "./pages/AIAssistant";
 import AdminPaymentDashboard from "./pages/AdminPaymentDashboard";
 import WorkflowAnalytics from "./pages/WorkflowAnalytics";
 import ProfitMarginReport from "./pages/ProfitMarginReport";
+import { UserManagement } from "./pages/UserManagement";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
@@ -107,6 +108,7 @@ function DashboardRouter() {
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/admin/payments" component={AdminPaymentDashboard} />
         <Route path="/admin/analytics" component={WorkflowAnalytics} />
+        <Route path="/users" component={UserManagement} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
