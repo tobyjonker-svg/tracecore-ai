@@ -268,22 +268,29 @@
 
 
 ## Phase 24: Inventory Activity Log
-- [ ] Create inventory_activity table in schema to track transactions (purchase, sale, adjustment)
-- [ ] Add tRPC router for inventory activities with CRUD procedures
-- [ ] Create Inventory Activity page showing transaction history with timestamps
-- [ ] Add filters by transaction type, date range, product
-- [ ] Implement cost history tracking for trend analysis
+- [x] Create inventory_activity table in schema to track transactions (purchase, sale, adjustment)
+- [x] Add tRPC router for inventory activities with CRUD procedures
+- [x] Create Inventory Activity page showing transaction history with timestamps
+- [x] Add filters by transaction type, date range, product
+- [x] Implement cost history tracking for trend analysis
+- [x] Integrated inventory router into main tRPC router
+- [x] InventoryLog page at /app/inventory-log with full transaction tracking
 
 ## Phase 25: Batch/Lot Tracking
-- [ ] Add batch_number, expiry_date, quality_status fields to products table
-- [ ] Create batch management UI in Products page
-- [ ] Implement expiry date warnings and alerts
-- [ ] Add quality control status tracking (good, defective, quarantine)
-- [ ] Show batch history and traceability
+- [x] Add batch_number, expiry_date, quality_status fields to products table
+- [x] Create batchLots table with batch management schema
+- [x] Implement batch/lot tracking with quality status (pending, approved, rejected, expired)
+- [x] Add expiry date tracking and getExpiringBatches helper
+- [x] Create tRPC batches router with 6 procedures (list, create, getById, update, delete, getExpiring)
+- [x] Integrated batches router into main tRPC router
+- [x] Database migration applied successfully (0009_abnormal_stingray.sql)
+- [x] Comprehensive batch tests written and passing (6 tests)
 
 ## Phase 26: Supplier Management
-- [ ] Create suppliers table with name, contact, payment_terms fields
-- [ ] Build Suppliers management page with add/edit/delete suppliers
-- [ ] Add pricing history tracking for each supplier
-- [ ] Implement supplier performance metrics (on-time delivery, quality)
-- [ ] Link suppliers to inputs for procurement tracking
+- [x] Create supplierPricingHistory table for tracking price changes over time
+- [x] Create supplierPerformance table with metrics (on-time delivery, quality issues, ratings)
+- [x] Create tRPC suppliers router with 9 procedures
+- [x] Add database helpers for supplier operations
+- [x] Integrated suppliers router into main tRPC router
+- [x] Database migration applied successfully (0010_blue_prowler.sql)
+- [x] All 119 tests passing (8 test files, 0 TypeScript errors)

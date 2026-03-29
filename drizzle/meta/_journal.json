@@ -64,6 +64,20 @@
       "when": 1774776613049,
       "tag": "0008_fancy_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1774783568084,
+      "tag": "0009_abnormal_stingray",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1774783672898,
+      "tag": "0010_blue_prowler",
+      "breakpoints": true
     }
   ]
 }

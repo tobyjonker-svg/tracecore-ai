@@ -152,12 +152,34 @@ export const products = mysqlTable("products", {
   currentStock: int("currentStock").default(0).notNull(),
   lowStockThreshold: int("lowStockThreshold").default(10),
   unit: varchar("unit", { length: 50 }).default("units"), // units, kg, liters, etc.
+  batchNumber: varchar("batchNumber", { length: 100 }), // Batch/lot number for traceability
+  expiryDate: timestamp("expiryDate"), // Expiry date for quality control
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
+
+// Batch/Lot tracking - track batches of inputs and products for traceability
+export const batches = mysqlTable("batches", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  productId: int("productId"),
+  inputId: int("inputId"),
+  batchNumber: varchar("batchNumber", { length: 100 }).notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 4 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("units"),
+  manufacturedDate: timestamp("manufacturedDate"),
+  expiryDate: timestamp("expiryDate"),
+  qualityStatus: mysqlEnum("qualityStatus", ["pending", "approved", "rejected", "expired"]).default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Batch = typeof batches.$inferSelect;
+export type InsertBatch = typeof batches.$inferInsert;
 
 // Inputs (Raw Materials) - track raw materials purchased from suppliers
 export const inputs = mysqlTable("inputs", {
@@ -170,6 +192,8 @@ export const inputs = mysqlTable("inputs", {
   unit: varchar("unit", { length: 50 }).default("kg").notNull(),
   currentStock: decimal("currentStock", { precision: 12, scale: 4 }).default("0").notNull(),
   lowStockThreshold: decimal("lowStockThreshold", { precision: 12, scale: 4 }).default("10"),
+  batchNumber: varchar("batchNumber", { length: 100 }), // Batch/lot number for traceability
+  expiryDate: timestamp("expiryDate"), // Expiry date for quality control
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -195,6 +219,42 @@ export const suppliers = mysqlTable("suppliers", {
 export type Supplier = typeof suppliers.$inferSelect;
 export type InsertSupplier = typeof suppliers.$inferInsert;
 
+// Supplier Pricing History - track price changes over time
+export const supplierPricingHistory = mysqlTable("supplierPricingHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  supplierId: int("supplierId").notNull(),
+  inputId: int("inputId").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("kg"),
+  effectiveDate: timestamp("effectiveDate").defaultNow(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SupplierPricingHistory = typeof supplierPricingHistory.$inferSelect;
+export type InsertSupplierPricingHistory = typeof supplierPricingHistory.$inferInsert;
+
+// Supplier Performance Metrics - track on-time delivery, quality, etc.
+export const supplierPerformance = mysqlTable("supplierPerformance", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  supplierId: int("supplierId").notNull(),
+  totalOrders: int("totalOrders").default(0),
+  onTimeDeliveries: int("onTimeDeliveries").default(0),
+  lateDeliveries: int("lateDeliveries").default(0),
+  qualityIssues: int("qualityIssues").default(0),
+  averageRating: decimal("averageRating", { precision: 3, scale: 2 }).default("5.00"),
+  lastOrderDate: timestamp("lastOrderDate"),
+  totalSpent: decimal("totalSpent", { precision: 12, scale: 2 }).default("0"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SupplierPerformance = typeof supplierPerformance.$inferSelect;
+export type InsertSupplierPerformance = typeof supplierPerformance.$inferInsert;
+
 // Inventory Activity - track all stock movements with cost tracking
 export const inventoryActivity = mysqlTable("inventoryActivity", {
   id: int("id").autoincrement().primaryKey(),
@@ -214,3 +274,23 @@ export const inventoryActivity = mysqlTable("inventoryActivity", {
 
 export type InventoryActivity = typeof inventoryActivity.$inferSelect;
 export type InsertInventoryActivity = typeof inventoryActivity.$inferInsert;
+
+// Batch/Lot tracking - track batches of inputs and products for traceability
+export const batchLots = mysqlTable("batchLots", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  productId: int("productId"),
+  inputId: int("inputId"),
+  batchNumber: varchar("batchNumber", { length: 100 }).notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 4 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("units"),
+  manufacturedDate: timestamp("manufacturedDate"),
+  expiryDate: timestamp("expiryDate"),
+  qualityStatus: mysqlEnum("qualityStatus", ["pending", "approved", "rejected", "expired"]).default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BatchLot = typeof batchLots.$inferSelect;
+export type InsertBatchLot = typeof batchLots.$inferInsert;

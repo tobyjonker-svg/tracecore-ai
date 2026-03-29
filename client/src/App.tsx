@@ -18,6 +18,7 @@ import Home from "./pages/Home";
 import Suppliers from "./pages/Suppliers";
 import { Inputs } from "./pages/Inputs";
 import Products from "./pages/Products";
+import { InventoryLog } from "./pages/InventoryLog";
 import Orders from "./pages/Orders";
 import ProductionRuns from "./pages/ProductionRuns";
 import InventoryActivity from "./pages/InventoryActivity";
@@ -49,6 +50,7 @@ function DashboardRouter() {
         <Route path="/products" component={Products} />
         <Route path="/orders" component={Orders} />
         <Route path="/production" component={ProductionRuns} />
+        <Route path="/inventory-log" component={InventoryLog} />
         <Route path="/inventory" component={InventoryActivity} />
         <Route path="/reports" component={Reports} />
         <Route path="/profit-margin" component={ProfitMarginReport} />

@@ -802,3 +802,403 @@ export async function getInventoryActivitySummary(
     throw error;
   }
 }
+
+
+// ── Batch/Lot Tracking ──────────────────────────────────────────
+
+export async function createBatchLot(data: {
+  workspaceId: number;
+  productId?: number;
+  inputId?: number;
+  batchNumber: string;
+  quantity: number | string;
+  unit?: string;
+  manufacturedDate?: Date;
+  expiryDate?: Date;
+  qualityStatus?: "pending" | "approved" | "rejected" | "expired";
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const result = await db.insert(batchLots).values({
+      workspaceId: data.workspaceId,
+      productId: data.productId || null,
+      inputId: data.inputId || null,
+      batchNumber: data.batchNumber,
+      quantity: (typeof data.quantity === "string" ? data.quantity : data.quantity.toString()) as any,
+      unit: data.unit || "units",
+      manufacturedDate: data.manufacturedDate || null,
+      expiryDate: data.expiryDate || null,
+      qualityStatus: (data.qualityStatus || "pending") as any,
+      notes: data.notes || null,
+    });
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to create batch lot:", error);
+    throw error;
+  }
+}
+
+export async function getBatchLots(workspaceId: number, filters?: { productId?: number; inputId?: number; qualityStatus?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const { eq, and } = await import("drizzle-orm");
+
+    const conditions = [eq(batchLots.workspaceId, workspaceId)];
+    if (filters?.productId) conditions.push(eq(batchLots.productId, filters.productId));
+    if (filters?.inputId) conditions.push(eq(batchLots.inputId, filters.inputId));
+    if (filters?.qualityStatus) conditions.push(eq(batchLots.qualityStatus as any, filters.qualityStatus));
+
+    const result = await db.select().from(batchLots).where(and(...conditions));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get batch lots:", error);
+    throw error;
+  }
+}
+
+export async function getBatchLotById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.select().from(batchLots).where(eq(batchLots.id, id));
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get batch lot by ID:", error);
+    throw error;
+  }
+}
+
+export async function updateBatchLot(id: number, data: Partial<{
+  batchNumber: string;
+  quantity: number | string;
+  unit: string;
+  manufacturedDate: Date;
+  expiryDate: Date;
+  qualityStatus: "pending" | "approved" | "rejected" | "expired";
+  notes: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const updateData: any = {};
+    if (data.batchNumber !== undefined) updateData.batchNumber = data.batchNumber;
+    if (data.quantity !== undefined) updateData.quantity = (typeof data.quantity === "string" ? data.quantity : data.quantity.toString()) as any;
+    if (data.unit !== undefined) updateData.unit = data.unit;
+    if (data.manufacturedDate !== undefined) updateData.manufacturedDate = data.manufacturedDate;
+    if (data.expiryDate !== undefined) updateData.expiryDate = data.expiryDate;
+    if (data.qualityStatus !== undefined) updateData.qualityStatus = data.qualityStatus as any;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+
+    const result = await db.update(batchLots).set(updateData).where(eq(batchLots.id, id));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to update batch lot:", error);
+    throw error;
+  }
+}
+
+export async function deleteBatchLot(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.delete(batchLots).where(eq(batchLots.id, id));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to delete batch lot:", error);
+    throw error;
+  }
+}
+
+export async function getExpiringBatches(workspaceId: number, daysUntilExpiry: number = 30) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { batchLots } = await import("../drizzle/schema");
+    const { eq, and, gte, lte, isNotNull } = await import("drizzle-orm");
+
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + daysUntilExpiry * 24 * 60 * 60 * 1000);
+
+    const result = await db
+      .select()
+      .from(batchLots)
+      .where(
+        and(
+          eq(batchLots.workspaceId, workspaceId),
+          isNotNull(batchLots.expiryDate),
+          gte(batchLots.expiryDate as any, now),
+          lte(batchLots.expiryDate as any, futureDate)
+        )
+      );
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get expiring batches:", error);
+    throw error;
+  }
+}
+
+
+// ── Supplier Management ─────────────────────────────────────────
+
+export async function createSupplier(data: {
+  workspaceId: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { suppliers } = await import("../drizzle/schema");
+    const result = await db.insert(suppliers).values({
+      workspaceId: data.workspaceId,
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      address: data.address || null,
+      city: data.city || null,
+      country: data.country || null,
+      notes: data.notes || null,
+    });
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to create supplier:", error);
+    throw error;
+  }
+}
+
+export async function getSuppliers(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { suppliers } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.select().from(suppliers).where(eq(suppliers.workspaceId, workspaceId));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get suppliers:", error);
+    throw error;
+  }
+}
+
+export async function getSupplierById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { suppliers } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get supplier by ID:", error);
+    throw error;
+  }
+}
+
+export async function updateSupplier(id: number, data: Partial<{
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  notes: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { suppliers } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email || null;
+    if (data.phone !== undefined) updateData.phone = data.phone || null;
+    if (data.address !== undefined) updateData.address = data.address || null;
+    if (data.city !== undefined) updateData.city = data.city || null;
+    if (data.country !== undefined) updateData.country = data.country || null;
+    if (data.notes !== undefined) updateData.notes = data.notes || null;
+
+    const result = await db.update(suppliers).set(updateData).where(eq(suppliers.id, id));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to update supplier:", error);
+    throw error;
+  }
+}
+
+export async function deleteSupplier(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { suppliers } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.delete(suppliers).where(eq(suppliers.id, id));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to delete supplier:", error);
+    throw error;
+  }
+}
+
+// Supplier Pricing History
+export async function addPricingHistory(data: {
+  workspaceId: number;
+  supplierId: number;
+  inputId: number;
+  price: number | string;
+  unit?: string;
+  effectiveDate?: Date;
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { supplierPricingHistory } = await import("../drizzle/schema");
+    const result = await db.insert(supplierPricingHistory).values({
+      workspaceId: data.workspaceId,
+      supplierId: data.supplierId,
+      inputId: data.inputId,
+      price: (typeof data.price === "string" ? data.price : data.price.toString()) as any,
+      unit: data.unit || "kg",
+      effectiveDate: data.effectiveDate || null,
+      notes: data.notes || null,
+    });
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to add pricing history:", error);
+    throw error;
+  }
+}
+
+export async function getPricingHistory(workspaceId: number, supplierId?: number, inputId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { supplierPricingHistory } = await import("../drizzle/schema");
+    const { eq, and } = await import("drizzle-orm");
+
+    const conditions = [eq(supplierPricingHistory.workspaceId, workspaceId)];
+    if (supplierId) conditions.push(eq(supplierPricingHistory.supplierId, supplierId));
+    if (inputId) conditions.push(eq(supplierPricingHistory.inputId, inputId));
+
+    const result = await db.select().from(supplierPricingHistory).where(and(...conditions));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get pricing history:", error);
+    throw error;
+  }
+}
+
+// Supplier Performance
+export async function getSupplierPerformance(workspaceId: number, supplierId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { supplierPerformance } = await import("../drizzle/schema");
+    const { eq, and } = await import("drizzle-orm");
+
+    const result = await db
+      .select()
+      .from(supplierPerformance)
+      .where(and(eq(supplierPerformance.workspaceId, workspaceId), eq(supplierPerformance.supplierId, supplierId)));
+
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get supplier performance:", error);
+    throw error;
+  }
+}
+
+export async function updateSupplierPerformance(
+  workspaceId: number,
+  supplierId: number,
+  data: Partial<{
+    totalOrders: number;
+    onTimeDeliveries: number;
+    lateDeliveries: number;
+    qualityIssues: number;
+    averageRating: number | string;
+    lastOrderDate: Date;
+    totalSpent: number | string;
+  }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { supplierPerformance } = await import("../drizzle/schema");
+    const { eq, and } = await import("drizzle-orm");
+
+    const updateData: any = {};
+    if (data.totalOrders !== undefined) updateData.totalOrders = data.totalOrders;
+    if (data.onTimeDeliveries !== undefined) updateData.onTimeDeliveries = data.onTimeDeliveries;
+    if (data.lateDeliveries !== undefined) updateData.lateDeliveries = data.lateDeliveries;
+    if (data.qualityIssues !== undefined) updateData.qualityIssues = data.qualityIssues;
+    if (data.averageRating !== undefined) updateData.averageRating = (typeof data.averageRating === "string" ? data.averageRating : data.averageRating.toString()) as any;
+    if (data.lastOrderDate !== undefined) updateData.lastOrderDate = data.lastOrderDate;
+    if (data.totalSpent !== undefined) updateData.totalSpent = (typeof data.totalSpent === "string" ? data.totalSpent : data.totalSpent.toString()) as any;
+
+    const result = await db
+      .update(supplierPerformance)
+      .set(updateData)
+      .where(and(eq(supplierPerformance.workspaceId, workspaceId), eq(supplierPerformance.supplierId, supplierId)));
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to update supplier performance:", error);
+    throw error;
+  }
+}
+
+export async function getAllSupplierPerformance(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { supplierPerformance } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const result = await db.select().from(supplierPerformance).where(eq(supplierPerformance.workspaceId, workspaceId));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get all supplier performance:", error);
+    throw error;
+  }
+}
