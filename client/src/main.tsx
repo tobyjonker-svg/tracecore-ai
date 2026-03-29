@@ -14,32 +14,55 @@ const redirectToLoginIfUnauthorized = async (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  // Only redirect if it's specifically an UNAUTHORIZED error with the right message
+  // Don't redirect on other errors like NOT_FOUND, BAD_REQUEST, etc.
+  const isUnauthorized = 
+    error.message === UNAUTHED_ERR_MSG || 
+    (error.data?.code === 'UNAUTHORIZED' && error.message.includes('Please login'));
 
-  if (!isUnauthorized) return;
+  if (!isUnauthorized) {
+    // Log other errors but don't redirect
+    console.debug('[Auth Check] Non-auth error:', error.data?.code, error.message);
+    return;
+  }
+
+  // Prevent redirect loop - don't redirect if already on auth page
+  if (window.location.href.includes('auth.manus.im')) return;
+  if (window.location.href.includes('/api/oauth')) return;
 
   try {
     const loginUrl = await getLoginUrl();
     window.location.href = loginUrl;
   } catch (err) {
     console.error('Failed to redirect to login:', err);
-    window.location.href = '/';
   }
 };
 
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error).catch(console.error);
-    console.error("[API Query Error]", error);
+    // Only redirect on auth errors, silently handle other errors
+    if (error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED') {
+      redirectToLoginIfUnauthorized(error).catch(console.error);
+    }
+    // Don't spam console with every error - only log auth-related ones
+    if (error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED') {
+      console.warn("[Auth Error] Unauthorized query:", error.message);
+    }
   }
 });
 
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error).catch(console.error);
-    console.error("[API Mutation Error]", error);
+    // Only redirect on auth errors, silently handle other errors
+    if (error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED') {
+      redirectToLoginIfUnauthorized(error).catch(console.error);
+    }
+    // Don't spam console with every error - only log auth-related ones
+    if (error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED') {
+      console.warn("[Auth Error] Unauthorized mutation:", error.message);
+    }
   }
 });
 
