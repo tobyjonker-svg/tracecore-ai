@@ -276,7 +276,7 @@ export default function Products() {
                       <SelectTrigger>
                         <SelectValue placeholder="Choose input..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border-border">
                         <SelectItem value="0">None</SelectItem>
                         {inputs.map((input) => (
                           <SelectItem key={input.id} value={input.id.toString()}>
