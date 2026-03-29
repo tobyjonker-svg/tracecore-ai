@@ -181,8 +181,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {/* Upgrade Section - Only show if not admin */}
-        {user?.role !== 'admin' && (
+        {/* Upgrade Section - Only show if not Pro+ */}
+        {state.workspace.tier !== 'pro_plus' && (
           <div className="px-3 py-3 border-t border-border">
             <button
               onClick={() => {
@@ -196,7 +196,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
         )}
-        {user?.role === 'admin' && (
+        {state.workspace.tier === 'pro_plus' && (
           <div className="px-3 py-3 border-t border-border">
             <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-400 border border-emerald-500/30 cursor-default">
               <Zap className="w-5 h-5 shrink-0" />
