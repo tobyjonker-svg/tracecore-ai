@@ -313,3 +313,57 @@ export const alerts = mysqlTable("alerts", {
 
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = typeof alerts.$inferInsert;
+
+
+// Orders - track customer orders
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  orderNumber: varchar("orderNumber", { length: 50 }).notNull(),
+  customerId: varchar("customerId", { length: 255 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }).notNull(),
+  productId: int("productId").notNull(),
+  quantity: int("quantity").notNull(),
+  totalPrice: decimal("totalPrice", { precision: 12, scale: 2 }).notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "shipped", "delivered", "cancelled"]).default("pending"),
+  dueDate: timestamp("dueDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+// Production Runs - track production batches
+export const productionRuns = mysqlTable("productionRuns", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  runNumber: varchar("runNumber", { length: 50 }).notNull(),
+  productId: int("productId").notNull(),
+  quantity: int("quantity").notNull(),
+  status: mysqlEnum("status", ["planned", "in_progress", "completed", "quality_check", "approved"]).default("planned"),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductionRun = typeof productionRuns.$inferSelect;
+export type InsertProductionRun = typeof productionRuns.$inferInsert;
+
+// Shipments - track order shipments
+export const shipments = mysqlTable("shipments", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  orderId: int("orderId").notNull(),
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+  carrier: varchar("carrier", { length: 100 }).default("Local Courier"),
+  status: mysqlEnum("status", ["pending", "picked", "packed", "shipped", "in_transit", "delivered"]).default("pending"),
+  estimatedDelivery: timestamp("estimatedDelivery"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Shipment = typeof shipments.$inferSelect;
+export type InsertShipment = typeof shipments.$inferInsert;

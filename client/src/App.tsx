@@ -21,6 +21,7 @@ import Products from "./pages/Products";
 import { InventoryLog } from "./pages/InventoryLog";
 import { Batches } from "./pages/Batches";
 import { SupplierPerformance } from "./pages/SupplierPerformance";
+import { Alerts } from "./pages/Alerts";
 import Orders from "./pages/Orders";
 import ProductionRuns from "./pages/ProductionRuns";
 import InventoryActivity from "./pages/InventoryActivity";
@@ -55,6 +56,7 @@ function DashboardRouter() {
         <Route path="/inventory-log" component={InventoryLog} />
         <Route path="/batches" component={Batches} />
         <Route path="/supplier-performance" component={SupplierPerformance} />
+        <Route path="/alerts" component={Alerts} />
         <Route path="/inventory" component={InventoryActivity} />
         <Route path="/reports" component={Reports} />
         <Route path="/profit-margin" component={ProfitMarginReport} />

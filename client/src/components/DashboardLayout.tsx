@@ -28,6 +28,7 @@ import {
   Loader2,
   CreditCard,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -36,18 +37,20 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/app', label: 'Home', icon: LayoutDashboard },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck },
-  { href: '/inputs', label: 'Inputs', icon: FlaskConical },
+  { href: '/suppliers', label: 'Suppliers', icon: Users },
+  { href: '/inputs', label: 'Raw Inputs', icon: Package },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/production', label: 'Production Runs', icon: Factory },
   { href: '/inventory', label: 'Inventory Activity', icon: Activity },
   { href: '/batches', label: 'Batch Management', icon: Package },
   { href: '/supplier-performance', label: 'Supplier Performance', icon: TrendingUp },
+  { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();

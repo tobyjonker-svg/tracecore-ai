@@ -1339,3 +1339,240 @@ export async function getAlertById(alertId: number) {
     throw error;
   }
 }
+
+
+// ===== ORDERS =====
+
+export async function getOrders(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { orders } = await import("../drizzle/schema");
+    return await db.select().from(orders).where(eq(orders.workspaceId, workspaceId)).orderBy(desc(orders.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get orders:", error);
+    throw error;
+  }
+}
+
+export async function createOrder(data: {
+  workspaceId: number;
+  orderNumber: string;
+  customerId: string;
+  customerName: string;
+  productId: number;
+  quantity: number;
+  totalPrice: string;
+  dueDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { orders } = await import("../drizzle/schema");
+    return await db.insert(orders).values({
+      ...data,
+      status: "pending",
+    });
+  } catch (error) {
+    console.error("[Database] Failed to create order:", error);
+    throw error;
+  }
+}
+
+export async function updateOrder(id: number, data: Partial<any>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { orders } = await import("../drizzle/schema");
+    return await db.update(orders).set({ ...data, updatedAt: new Date() }).where(eq(orders.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to update order:", error);
+    throw error;
+  }
+}
+
+export async function deleteOrder(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { orders } = await import("../drizzle/schema");
+    return await db.delete(orders).where(eq(orders.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to delete order:", error);
+    throw error;
+  }
+}
+
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { orders } = await import("../drizzle/schema");
+    const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get order by ID:", error);
+    throw error;
+  }
+}
+
+// ===== PRODUCTION RUNS =====
+
+export async function getProductionRuns(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { productionRuns } = await import("../drizzle/schema");
+    return await db.select().from(productionRuns).where(eq(productionRuns.workspaceId, workspaceId)).orderBy(desc(productionRuns.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get production runs:", error);
+    throw error;
+  }
+}
+
+export async function createProductionRun(data: {
+  workspaceId: number;
+  runNumber: string;
+  productId: number;
+  quantity: number;
+  startDate?: Date;
+  endDate?: Date;
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { productionRuns } = await import("../drizzle/schema");
+    return await db.insert(productionRuns).values({
+      ...data,
+      status: "planned",
+    });
+  } catch (error) {
+    console.error("[Database] Failed to create production run:", error);
+    throw error;
+  }
+}
+
+export async function updateProductionRun(id: number, data: Partial<any>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { productionRuns } = await import("../drizzle/schema");
+    return await db.update(productionRuns).set({ ...data, updatedAt: new Date() }).where(eq(productionRuns.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to update production run:", error);
+    throw error;
+  }
+}
+
+export async function deleteProductionRun(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { productionRuns } = await import("../drizzle/schema");
+    return await db.delete(productionRuns).where(eq(productionRuns.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to delete production run:", error);
+    throw error;
+  }
+}
+
+export async function getProductionRunById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { productionRuns } = await import("../drizzle/schema");
+    const result = await db.select().from(productionRuns).where(eq(productionRuns.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get production run by ID:", error);
+    throw error;
+  }
+}
+
+// ===== SHIPMENTS =====
+
+export async function getShipments(workspaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { shipments } = await import("../drizzle/schema");
+    return await db.select().from(shipments).where(eq(shipments.workspaceId, workspaceId)).orderBy(desc(shipments.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get shipments:", error);
+    throw error;
+  }
+}
+
+export async function createShipment(data: {
+  workspaceId: number;
+  orderId: number;
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { shipments } = await import("../drizzle/schema");
+    return await db.insert(shipments).values({
+      ...data,
+      status: "pending",
+    });
+  } catch (error) {
+    console.error("[Database] Failed to create shipment:", error);
+    throw error;
+  }
+}
+
+export async function updateShipment(id: number, data: Partial<any>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { shipments } = await import("../drizzle/schema");
+    return await db.update(shipments).set({ ...data, updatedAt: new Date() }).where(eq(shipments.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to update shipment:", error);
+    throw error;
+  }
+}
+
+export async function deleteShipment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { shipments } = await import("../drizzle/schema");
+    return await db.delete(shipments).where(eq(shipments.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to delete shipment:", error);
+    throw error;
+  }
+}
+
+export async function getShipmentById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const { shipments } = await import("../drizzle/schema");
+    const result = await db.select().from(shipments).where(eq(shipments.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get shipment by ID:", error);
+    throw error;
+  }
+}

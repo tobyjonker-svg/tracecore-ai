@@ -327,3 +327,140 @@
 - [ ] Create alerts history page at /app/alerts (UI component)
 - [ ] Add alerts bell icon to top navigation with unread count
 - [ ] Implement real-time alert notifications (toast notifications)
+
+
+---
+
+# SECTION 1: CORE FEATURES (Phases 30-40)
+
+## Phase 30: Alerts UI & Notifications System
+- [x] Create alerts history page at `/app/alerts` with full alert list
+- [x] Add alerts bell icon to top navigation bar with unread count badge
+- [x] Create alerts dropdown showing 5 most recent alerts
+- [x] Implement "Mark as Read" and "Dismiss" actions in dropdown
+- [x] Add toast notifications for critical alerts (expiring batches, late deliveries)
+- [x] Create alert detail modal showing full alert info and related entity
+- [x] Add filter/search in alerts history page (by type, severity, date range)
+- [x] Implement alert auto-dismiss after 5 seconds for info-level alerts
+- [x] Write comprehensive tests for alerts UI components
+- [x] Verify all alert types trigger correctly (low_stock, expiring_batch, late_delivery, quality_issue)
+
+## Phase 31: Complete Inputs→Products→Profit Chain
+- [x] Add sidebar link to Inputs page (currently missing)
+- [x] Update Products form to link inputs via dropdown selector
+- [x] Add conversion_ratio field to products (e.g., "1kg input makes 100 units")
+- [x] Implement auto-calculation of input_cost_per_unit (input cost ÷ conversion ratio)
+- [x] Update Products list to show input cost per unit
+- [x] Update Profit Margin Report with "Input Cost", "Product Price", "Profit/Unit", "Margin %" columns
+- [x] Add summary row showing total input value, product value, total profit
+- [x] Implement filter by input type in margin report
+- [x] Write tests for supply chain calculations
+- [x] Test end-to-end: add input → add product → verify margins update
+
+## Phase 32: Orders Management System
+- [x] Create orders table in database schema (orderId, customerId, productId, quantity, totalPrice, status, dueDate)
+- [x] Create tRPC orders router with CRUD procedures (list, create, update, delete, getById, updateStatus)
+- [ ] Build Orders management page at `/app/orders` with add/edit/delete forms (existing page needs MVP update)
+- [x] Display orders list with columns: order ID, customer, product, quantity, total price, status, due date
+- [x] Implement order status workflow (pending → processing → shipped → delivered → cancelled)
+- [ ] Add order filtering by status, date range, customer
+- [ ] Implement order search by order ID or customer name
+- [x] Add sidebar link to Orders page
+- [ ] Write comprehensive tests for orders router (8+ tests)
+- [ ] Verify all tests passing
+
+## Phase 33: Production Runs Tracking
+- [x] Create production_runs table in database schema (runId, productId, quantity, startDate, endDate, status, notes)
+- [x] Create tRPC production router with CRUD procedures
+- [ ] Build Production Runs page at `/app/production` with form for creating/editing runs (existing page needs MVP update)
+- [x] Display production runs list with columns: run ID, product, quantity, start date, end date, status
+- [x] Implement production status workflow (planned → in_progress → completed → quality_check → approved)
+- [ ] Add production run filtering by status, product, date range
+- [x] Link production runs to products (show which product is being produced)
+- [ ] Link production runs to inventory (auto-update inventory when production completes)
+- [x] Add sidebar link to Production Runs page
+- [ ] Write comprehensive tests for production router
+
+## Phase 34: Shipping & Logistics Integration
+- [x] Create shipments table in database schema (shipmentId, orderId, trackingNumber, carrier, status, estimatedDelivery)
+- [x] Create tRPC shipments router with CRUD procedures
+- [ ] Build Shipments page at `/app/shipments` with tracking info (MVP)
+- [x] Implement shipment status workflow (pending → picked → packed → shipped → in_transit → delivered)
+- [x] Add shipment tracking number display
+- [x] Link shipments to orders (show which order is being shipped)
+- [x] Implement carrier selection (FedEx, DHL, UPS, Local Courier, etc.)
+- [x] Add estimated delivery date calculation
+- [ ] Add sidebar link to Shipments page
+- [ ] Write comprehensive tests for shipments router
+
+## Phase 35: Dashboard Analytics & KPIs
+- [ ] Create comprehensive dashboard homepage showing key metrics
+- [ ] Add KPI cards: total revenue, total orders, pending orders, low stock items
+- [ ] Add charts: monthly revenue trend, orders by status, top products by revenue
+- [ ] Implement inventory health gauge (% stock levels)
+- [ ] Add recent activity feed (last 10 transactions, orders, shipments)
+- [ ] Add quick action buttons (add product, create order, start production run)
+- [ ] Implement date range selector for all dashboard metrics
+- [ ] Add CSV export for dashboard data
+- [ ] Write tests for dashboard calculations and data aggregation
+- [ ] Verify dashboard loads within 2 seconds
+
+## Phase 36: Settings & Workspace Configuration
+- [ ] Add workspace settings page with business info editing
+- [ ] Implement user role management (admin, manager, staff)
+- [ ] Add permission levels for different features
+- [ ] Create API keys management section for integrations
+- [ ] Add backup/export workspace data feature
+- [ ] Implement workspace deletion with confirmation
+- [ ] Add audit log showing all user actions
+- [ ] Create notification preferences section
+- [ ] Write tests for settings operations
+- [ ] Verify all settings persist correctly
+
+## Phase 37: Reports & Analytics Suite
+- [ ] Create comprehensive Reports page at `/app/reports`
+- [ ] Build Sales Report (revenue by product, by date range, by customer)
+- [ ] Build Inventory Report (current stock levels, stock value, turnover rate)
+- [ ] Build Production Report (units produced, production time, efficiency %)
+- [ ] Build Supplier Report (orders placed, on-time delivery %, quality issues)
+- [ ] Implement date range filtering for all reports
+- [ ] Add CSV/PDF export for each report
+- [ ] Create scheduled report generation (daily, weekly, monthly)
+- [ ] Add email delivery for scheduled reports
+- [ ] Write tests for report calculations and exports
+
+## Phase 38: Data Import/Export & Integrations
+- [ ] Create data import page for bulk CSV uploads
+- [ ] Implement CSV template generator for each entity (products, orders, suppliers, etc.)
+- [ ] Add validation for imported data before saving
+- [ ] Create data export feature for all entities (products, orders, inventory, etc.)
+- [ ] Implement duplicate detection during imports
+- [ ] Add import history and rollback capability
+- [ ] Create API documentation for third-party integrations
+- [ ] Add webhook support for order/shipment status updates
+- [ ] Write tests for import/export operations
+- [ ] Verify data integrity after imports
+
+## Phase 39: Mobile Responsiveness & PWA
+- [ ] Test all pages on mobile devices (iPhone, Android)
+- [ ] Fix responsive design issues (buttons, forms, tables)
+- [ ] Implement mobile-friendly navigation (hamburger menu)
+- [ ] Add PWA manifest and service worker
+- [ ] Enable offline mode for read-only operations
+- [ ] Optimize images for mobile loading
+- [ ] Test touch interactions and gestures
+- [ ] Implement mobile-specific shortcuts (quick add product, quick order)
+- [ ] Write tests for mobile responsiveness
+- [ ] Verify app works on 4G and slow networks
+
+## Phase 40: Security & Compliance
+- [ ] Implement HTTPS enforcement
+- [ ] Add CSRF protection to all forms
+- [ ] Implement rate limiting on API endpoints
+- [ ] Add SQL injection prevention (already using Drizzle ORM)
+- [ ] Implement XSS protection
+- [ ] Add data encryption for sensitive fields (passwords, API keys)
+- [ ] Create security audit log
+- [ ] Implement two-factor authentication (2FA)
+- [ ] Add GDPR compliance features (data export, deletion)
+- [ ] Write security tests and penetration testing checklist
