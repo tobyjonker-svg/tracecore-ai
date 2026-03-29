@@ -14,8 +14,11 @@ export function useAuth(options?: UseAuthOptions) {
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
+    retry: 1,
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
+    // Don't treat errors as fatal - user might still be authenticated
+    throwOnError: false,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -42,15 +45,28 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    // Try to restore from localStorage if query fails
+    const userData = meQuery.data ?? (() => {
+      try {
+        const stored = localStorage.getItem("manus-runtime-user-info");
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
+      }
+    })();
+    
+    if (userData) {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(userData)
+      );
+    }
+    
     return {
-      user: meQuery.data ?? null,
+      user: userData ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      isAuthenticated: Boolean(userData),
     };
   }, [
     meQuery.data,
@@ -66,6 +82,9 @@ export function useAuth(options?: UseAuthOptions) {
     if (state.user) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
+    // Prevent redirect loop - don't redirect if already on auth page
+    if (window.location.href.includes('auth.manus.im')) return;
+    if (window.location.href.includes('/api/oauth')) return;
 
     window.location.href = redirectPath
   }, [
