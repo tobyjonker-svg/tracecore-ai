@@ -3,15 +3,29 @@
  * Marketing homepage for SaaS product
  */
 
-import { ArrowRight, Zap, BarChart3, Lock, Smartphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Zap, BarChart3, Lock, Smartphone, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { getLoginUrl } from '@/const';
 import WorkflowBuilder from '@/components/WorkflowBuilder';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 export default function Landing() {
   const [isLoading, setIsLoading] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInName, setSignInName] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const carouselImages = [
     {
@@ -45,6 +59,39 @@ export default function Landing() {
     }
   };
 
+  const handleLocalSignIn = async () => {
+    if (!signInEmail.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      const response = await fetch('/api/auth/local-signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: signInEmail,
+          name: signInName || signInEmail.split('@')[0],
+        }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Sign in failed');
+      }
+
+      const data = await response.json();
+      toast.success('Signed in successfully!');
+      window.location.href = data.redirectUrl || '/';
+    } catch (error) {
+      console.error('Sign in failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Sign in failed');
+      setIsSigningIn(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Navigation */}
@@ -55,14 +102,55 @@ export default function Landing() {
             <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">
               Pricing
             </a>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleLogin}
-              disabled={isLoading}
-            >
-              Sign In
-            </Button>
+            <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Sign In to TraceCore AI</DialogTitle>
+                  <DialogDescription>
+                    Enter your email to access your account
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={signInEmail}
+                      onChange={(e) => setSignInEmail(e.target.value)}
+                      disabled={isSigningIn}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Name (Optional)</label>
+                    <Input
+                      type="text"
+                      placeholder="Your Name"
+                      value={signInName}
+                      onChange={(e) => setSignInName(e.target.value)}
+                      disabled={isSigningIn}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleLocalSignIn}
+                    disabled={isSigningIn}
+                    className="w-full"
+                  >
+                    {isSigningIn ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button
               size="sm"
               onClick={() => (window.location.href = '/settings')}

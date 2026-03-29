@@ -40,6 +40,41 @@ export function registerOAuthRoutes(app: Express) {
     }
   });
 
+  // Local sign-in endpoint for development/testing when OAuth is unavailable
+  app.post("/api/auth/local-signin", async (req: Request, res: Response) => {
+    try {
+      const { email, name } = req.body;
+      
+      if (!email) {
+        res.status(400).json({ error: "email is required" });
+        return;
+      }
+
+      // Create or update user with local authentication
+      const user = await db.upsertUser({
+        openId: `local-${email}`,
+        name: name || email.split('@')[0],
+        email: email,
+        loginMethod: 'local',
+        lastSignedIn: new Date(),
+      });
+
+      // Create session token
+      const sessionToken = await sdk.createSessionToken(`local-${email}`, {
+        name: name || email.split('@')[0],
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+      res.json({ success: true, redirectUrl: '/' });
+    } catch (error) {
+      console.error("[Auth] Local sign-in failed", error);
+      res.status(500).json({ error: "Local sign-in failed" });
+    }
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");

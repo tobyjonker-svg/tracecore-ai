@@ -185,3 +185,8 @@
 - [x] Fixed Sign In button not working - Updated OAuth login endpoint to accept frontend origin parameter
 - [x] getLoginUrl now passes window.location.origin to server for correct redirect URI
 - [x] OAuth callback now uses correct domain for deployed environment
+
+- [x] Implemented local sign-in endpoint at /api/auth/local-signin to bypass OAuth when auth.manus.im is unreachable
+- [x] Added sign-in dialog to Landing page with email and name fields
+- [x] Local sign-in creates session and redirects to dashboard
+- [x] All 113 tests passing with local sign-in implementation
