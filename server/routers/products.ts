@@ -67,7 +67,7 @@ export const productsRouter = router({
           description: input.description,
           sku: input.sku,
           inputId: input.inputId,
-          conversionRatio: input.conversionRatio?.toString(),
+          conversionRatio: input.conversionRatio ? input.conversionRatio.toString() : null,
           costPerUnit: input.costPerUnit.toString(),
           sellingPrice: input.sellingPrice.toString(),
           currentStock: input.currentStock,
@@ -241,6 +241,8 @@ export const productsRouter = router({
         if (input.data.name !== undefined) updateData.name = input.data.name;
         if (input.data.description !== undefined) updateData.description = input.data.description;
         if (input.data.sku !== undefined) updateData.sku = input.data.sku;
+        if (input.data.inputId !== undefined) updateData.inputId = input.data.inputId;
+        if (input.data.conversionRatio !== undefined) updateData.conversionRatio = input.data.conversionRatio ? input.data.conversionRatio.toString() : null;
         if (input.data.costPerUnit !== undefined) updateData.costPerUnit = input.data.costPerUnit.toString();
         if (input.data.sellingPrice !== undefined) updateData.sellingPrice = input.data.sellingPrice.toString();
         if (input.data.currentStock !== undefined) updateData.currentStock = input.data.currentStock;
