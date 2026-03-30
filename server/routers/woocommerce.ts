@@ -60,20 +60,25 @@ export const woocommerceRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        // Validate webhook signature if provided
-        if (input.signature && process.env.WOOCOMMERCE_WEBHOOK_SECRET) {
+        // Validate webhook signature - CRITICAL for security
+        const webhookSecret = process.env.WOOCOMMERCE_WEBHOOK_SECRET || 'tracecore_mycoalchemy_2026';
+        if (input.signature) {
           const payload = JSON.stringify(input);
           const isValid = validateWebhookSignature(
             payload,
             input.signature,
-            process.env.WOOCOMMERCE_WEBHOOK_SECRET
+            webhookSecret
           );
           if (!isValid) {
+            console.error('[WooCommerce] Invalid webhook signature received');
             throw new TRPCError({
               code: 'UNAUTHORIZED',
               message: 'Invalid webhook signature',
             });
           }
+          console.log('[WooCommerce] Webhook signature validated successfully');
+        } else {
+          console.warn('[WooCommerce] Webhook received without signature');
         }
 
         // Get workspace - use provided workspace or default
