@@ -119,6 +119,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearTimeout(timer);
   }, [loading]);
 
+  // Redirect if not authenticated (must be at top level, not in conditional)
+  useEffect(() => {
+    if (loading || isAuthenticated) return;
+    console.log('[Auth] Not authenticated, redirecting to login');
+    window.location.href = '/api/oauth/login';
+  }, [loading, isAuthenticated]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -134,10 +141,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (!isAuthenticated) {
-    useEffect(() => {
-      console.log('[Auth] Not authenticated, redirecting to login');
-      window.location.href = '/api/oauth/login';
-    }, []);
     return null;
   }
 
