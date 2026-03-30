@@ -107,16 +107,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const closeSidebar = () => setSidebarOpen(false);
 
-  // Show loading state while checking auth
+  // Show loading state while checking auth (with timeout fallback)
+  const [authTimeout, setAuthTimeout] = useState(false);
+  
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => {
+      console.warn('[Auth] Loading timeout - auth query took too long');
+      setAuthTimeout(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading dashboard...</p>
+          {authTimeout && (
+            <p className="text-xs text-yellow-600 mt-4">Taking longer than expected. Redirecting...</p>
+          )}
         </div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    useEffect(() => {
+      console.log('[Auth] Not authenticated, redirecting to login');
+      window.location.href = '/api/oauth/login';
+    }, []);
+    return null;
   }
 
   return (

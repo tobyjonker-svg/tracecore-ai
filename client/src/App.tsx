@@ -9,7 +9,7 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
-import { AuthProvider } from "./contexts/AuthContext";
+// Removed: Legacy AuthContext - using tRPC cookie auth instead
 import { AICommandProvider } from "./contexts/AICommandContext";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -141,10 +141,9 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <AuthProvider>
-          <AppProvider>
-            <AICommandProvider>
-              <TooltipProvider>
+        <AppProvider>
+          <AICommandProvider>
+            <TooltipProvider>
                 <Toaster
                   theme="dark"
                   position="bottom-right"
@@ -160,7 +159,6 @@ function App() {
               </TooltipProvider>
             </AICommandProvider>
           </AppProvider>
-        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
