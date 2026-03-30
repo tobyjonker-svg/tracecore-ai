@@ -660,3 +660,19 @@
 - Scheduled automation for recurring operations
 - Real-time data sync
 - Intelligent error handling and recovery
+
+
+## Domain Transfer (In Progress)
+- [x] Disabled registrar lock at Texo
+- [x] Configured nameservers (NS1-NS4.manus.space) in Texo
+- [ ] Texo support ticket: Resolve nameserver change issue
+- [ ] Verify nameserver propagation (24-48 hours)
+- [ ] Confirm tracecoreai.com resolves to Manus infrastructure
+- [ ] Add custom domain to Manus dashboard
+- [ ] Go live with tracecoreai.com
+
+## Mobile Auth Issues (Fixed)
+- [x] Fixed Inputs page hanging on "Authenticating..."
+- [x] Fixed Products page hanging on "Authenticating..."
+- [x] Added auth guards to defer protected queries until authenticated
+- [x] All 158/164 tests passing
