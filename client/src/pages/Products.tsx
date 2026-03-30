@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,6 +79,8 @@ export default function Products() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(INITIAL_FORM);
 
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
   // Queries and mutations with error handling
   const { 
     data: products = [], 
@@ -86,18 +89,21 @@ export default function Products() {
     refetch 
   } = trpc.products.list.useQuery(undefined, {
     retry: 1,
+    enabled: isAuthenticated && !authLoading,
   });
 
   const { 
     data: inputs = [],
   } = trpc.inputs.list.useQuery(undefined, {
     retry: 1,
+    enabled: isAuthenticated && !authLoading,
   });
 
   const { 
     data: valuation,
   } = trpc.products.getValuation.useQuery(undefined, {
     retry: 1,
+    enabled: isAuthenticated && !authLoading,
   });
 
   const createMutation = trpc.products.create.useMutation({

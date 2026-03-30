@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,11 @@ export function Inputs() {
     supplierId: "",
   });
 
-  const { data: inputs, isLoading, error, refetch } = trpc.inputs.list.useQuery();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  const { data: inputs, isLoading, error, refetch } = trpc.inputs.list.useQuery(undefined, {
+    enabled: isAuthenticated && !authLoading,
+  });
   const createMutation = trpc.inputs.create.useMutation();
   const updateMutation = trpc.inputs.update.useMutation();
   const deleteMutation = trpc.inputs.delete.useMutation();
