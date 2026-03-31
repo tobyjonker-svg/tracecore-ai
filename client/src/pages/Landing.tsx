@@ -347,31 +347,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Demo Video Section */}
-      <section className="py-20 px-4 bg-card/50">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground text-center mb-4">
-            See TraceCore AI in Action
-          </h2>
-          <p className="text-lg text-muted-foreground text-center mb-12">
-            Watch how Pro+ features transform your manufacturing operations
-          </p>
-          
-          <div className="rounded-lg border border-primary/20 overflow-hidden shadow-2xl bg-muted/30">
-            <div className="relative aspect-video bg-black">
-              <video
-                controls
-                className="w-full h-full"
-                poster="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/t1_95145f99.png"
-              >
-                <source src="https://d2xsxph8kpxj0f.cloudfront.net/tracecore-pro-plus-demo-final.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section className="py-20 px-4 bg-card/50">
         <div className="max-w-6xl mx-auto">
