@@ -676,3 +676,8 @@
 - [x] Fixed Products page hanging on "Authenticating..."
 - [x] Added auth guards to defer protected queries until authenticated
 - [x] All 158/164 tests passing
+
+
+## Current Bugs to Fix
+- [ ] Suppliers cannot be edited after creation - Need to add edit button and modal to Suppliers page
+- [ ] Raw inputs asking for supplier ID but supplier creation doesn't show ID field - Need to auto-populate supplier ID from database

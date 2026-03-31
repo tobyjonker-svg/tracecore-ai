@@ -3,15 +3,16 @@
  * Design: Soft-Dark Enterprise
  */
 
-import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useState } from 'react';
 import { formatDate } from '@/lib/store';
-import { Truck, Plus, Trash2, Mail, Phone, Package, Globe, Zap, HelpCircle } from 'lucide-react';
+import { Truck, Plus, Edit2, Trash2, Mail, Phone, Package, Globe, Zap, HelpCircle } from 'lucide-react';
 import OnboardingTour from '@/components/OnboardingTour';
 import { SUPPLIERS_TOUR_STEPS, getOnboardingState, markTourComplete } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 export default function Suppliers() {
@@ -24,6 +25,17 @@ export default function Suppliers() {
   const [contactInfo, setContactInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+    notes: '',
+  });
   const onboardingState = getOnboardingState();
 
   const handleAdd = (e: React.FormEvent) => {
@@ -51,8 +63,125 @@ export default function Suppliers() {
     toast.success(`Supplier "${supplierName}" removed`);
   };
 
+  const handleEditClick = (supplier: any) => {
+    setEditingSupplier(supplier);
+    setEditFormData({
+      name: supplier.name || '',
+      email: supplier.email || '',
+      phone: supplier.phone || '',
+      address: supplier.address || '',
+      city: supplier.city || '',
+      country: supplier.country || '',
+      notes: supplier.notes || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!editFormData.name.trim()) {
+      toast.error('Supplier name is required');
+      return;
+    }
+    // Update supplier in state (AppContext)
+    dispatch({
+      type: 'DELETE_SUPPLIER',
+      payload: editingSupplier.id,
+    });
+    dispatch({
+      type: 'ADD_SUPPLIER',
+      payload: {
+        id: editingSupplier.id,
+        ...editFormData,
+        createdAt: editingSupplier.createdAt,
+      },
+    });
+    setIsEditDialogOpen(false);
+    toast.success(`Supplier "${editFormData.name}" updated successfully`);
+  };
+
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
+    <>
+      {/* Edit Supplier Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Supplier</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Supplier Name *</Label>
+              <Input
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                placeholder="Supplier name"
+                className="bg-muted/50 border-border focus:border-primary/50"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Email</Label>
+              <Input
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                placeholder="Email"
+                className="bg-muted/50 border-border focus:border-primary/50"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Phone</Label>
+              <Input
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                placeholder="Phone"
+                className="bg-muted/50 border-border focus:border-primary/50"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Address</Label>
+              <Input
+                value={editFormData.address}
+                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                placeholder="Address"
+                className="bg-muted/50 border-border focus:border-primary/50"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">City</Label>
+                <Input
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                  placeholder="City"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Country</Label>
+                <Input
+                  value={editFormData.country}
+                  onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                  placeholder="Country"
+                  className="bg-muted/50 border-border focus:border-primary/50"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
+              <Input
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                placeholder="Notes"
+                className="bg-muted/50 border-border focus:border-primary/50"
+              />
+            </div>
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditSave} className="bg-primary hover:bg-primary/90">Save Changes</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -196,9 +325,12 @@ export default function Suppliers() {
                   View Plans
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
+             </div>
+      </div>
+    </div>
+    </>
+  );
+}
 
         {/* Suppliers List */}
         <div className="lg:col-span-2 space-y-3">
@@ -265,12 +397,20 @@ export default function Suppliers() {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(supplier.id, supplier.name)}
-                      className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-muted-foreground transition-colors shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditClick(supplier)}
+                        className="p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-400 text-muted-foreground transition-colors shrink-0"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                        className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-muted-foreground transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Inputs sourced from this supplier */}
@@ -306,5 +446,6 @@ export default function Suppliers() {
         onComplete={() => markTourComplete('suppliers')}
       />
     </div>
+    </>
   );
 }

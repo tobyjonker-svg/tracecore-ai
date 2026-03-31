@@ -24,6 +24,9 @@ export function Inputs() {
   const { data: inputs, isLoading, error, refetch } = trpc.inputs.list.useQuery(undefined, {
     enabled: isAuthenticated && !authLoading,
   });
+  const { data: suppliers = [] } = trpc.suppliers.list.useQuery(undefined, {
+    enabled: isAuthenticated && !authLoading,
+  });
   const createMutation = trpc.inputs.create.useMutation();
   const updateMutation = trpc.inputs.update.useMutation();
   const deleteMutation = trpc.inputs.delete.useMutation();
@@ -233,13 +236,19 @@ export function Inputs() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Supplier ID (Optional)</label>
-              <Input
-                type="number"
-                placeholder="Supplier ID"
+              <label className="block text-sm font-medium mb-1">Supplier (Optional)</label>
+              <select
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
                 value={formData.supplierId}
                 onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-              />
+              >
+                <option value="">-- Select a supplier --</option>
+                {suppliers.map((supplier: any) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
               <p className="text-xs text-gray-500 mt-1">Link to a supplier for tracking pricing</p>
             </div>
             <div className="flex gap-2 justify-end pt-4">
