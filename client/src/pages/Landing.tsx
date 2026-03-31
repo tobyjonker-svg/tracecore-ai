@@ -347,6 +347,31 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Demo Video Section */}
+      <section className="py-20 px-4 bg-card/50">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-4xl font-bold text-foreground text-center mb-4">
+            See TraceCore AI in Action
+          </h2>
+          <p className="text-lg text-muted-foreground text-center mb-12">
+            Watch how Pro+ features transform your manufacturing operations
+          </p>
+          
+          <div className="rounded-lg border border-primary/20 overflow-hidden shadow-2xl bg-muted/30">
+            <div className="relative aspect-video bg-black">
+              <video
+                controls
+                className="w-full h-full"
+                poster="https://d2xsxph8kpxj0f.cloudfront.net/310519663448206084/JqzfJcQaypCLFt4Ngi48YW/t1_95145f99.png"
+              >
+                <source src="https://d2xsxph8kpxj0f.cloudfront.net/tracecore-pro-plus-demo-final.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section className="py-20 px-4 bg-card/50">
         <div className="max-w-6xl mx-auto">
@@ -424,6 +449,46 @@ export default function Landing() {
           </Button>
         </div>
       </section>
+
+      {/* Footer with Policies */}
+      <footer className="border-t border-border bg-muted/30 py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Product</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Support</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="mailto:support@tracecoreai.com" className="hover:text-foreground transition-colors">Email Support</a></li>
+                <li><a href="mailto:sales@tracecoreai.com" className="hover:text-foreground transition-colors">Sales Inquiry</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Legal</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</a></li>
+                <li><a href="/cancellation-policy" className="hover:text-foreground transition-colors">Cancellation Policy</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Guarantee</h3>
+              <p className="text-sm text-muted-foreground">
+                <strong>30-Day Money-Back Guarantee</strong><br/>
+                Not satisfied? Full refund within 30 days. No questions asked.
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
+            <p>© 2026 TraceCore AI. All rights reserved.</p>
+            <p className="mt-2">Trusted by manufacturers • Enterprise Security • 99.5% Uptime SLA</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
