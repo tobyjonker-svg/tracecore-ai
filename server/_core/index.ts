@@ -8,6 +8,9 @@ import { registerAdminLoginRoute } from "./admin-login";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { createTrackerEndpoint } from "./tracker-endpoint";
+import { createPixelEndpoint } from "./pixel-endpoint";
+import { validateWooCommerceWebhook } from "./webhook-validator";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +41,11 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Admin login endpoint
   registerAdminLoginRoute(app);
+  // Tracker and Pixel endpoints for MycoAlchemy
+  app.use(createTrackerEndpoint());
+  app.use(createPixelEndpoint());
+  // Webhook validation middleware for WooCommerce
+  app.post("/api/woocommerce/webhook", validateWooCommerceWebhook);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -131,13 +131,13 @@ export const productionRouter = router({
           try {
             // Get the product being produced
             const products = await db.getProductById(run.productId);
-            if (products.length > 0) {
+            if (products && products.length > 0) {
               const product = products[0];
               const newStock = (product.currentStock || 0) + run.quantity;
-              
+
               // Update product stock in TraceCore
               await db.updateProduct(run.productId, { currentStock: newStock });
-              
+
               // Sync updated stock to WooCommerce
               await syncInventoryToWooCommerce({
                 productId: run.productId,
@@ -145,7 +145,7 @@ export const productionRouter = router({
                 productName: product.name,
                 sku: product.sku || undefined,
               });
-              
+
               console.log(`[Production] Synced ${product.name} stock (${newStock} units) to WooCommerce`);
             }
           } catch (syncError) {
@@ -161,4 +161,3 @@ export const productionRouter = router({
       }
     }),
 });
-
