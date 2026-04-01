@@ -10,6 +10,7 @@ import { publicProcedure, router, protectedProcedure } from '../_core/trpc';
 import { TRPCError } from '@trpc/server';
 import * as db from '../db';
 import crypto from 'crypto';
+import { syncInventoryToWooCommerce } from '../_core/woocommerce-sync';
 
 // Webhook signature validation
 const validateWebhookSignature = (payload: string, signature: string, secret: string): boolean => {
@@ -114,6 +115,19 @@ export const woocommerceRouter = router({
             await db.updateProduct(product.id, {
               currentStock: newStock,
             });
+            
+            // Sync updated stock back to WooCommerce
+            try {
+              await syncInventoryToWooCommerce({
+                productId: product.id,
+                quantity: newStock,
+                productName: product.name,
+                sku: product.sku || undefined,
+              });
+              console.log(`[WooCommerce] Synced ${product.name} stock (${newStock} units) after order`);
+            } catch (syncError) {
+              console.error('[WooCommerce] Failed to sync inventory after order:', syncError);
+            }
           }
         }
 

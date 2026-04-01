@@ -2,6 +2,7 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 import { TRPCError } from "@trpc/server";
+import { syncInventoryToWooCommerce } from "../_core/woocommerce-sync";
 
 export const productionRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -123,10 +124,41 @@ export const productionRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
-        return await db.updateProductionRun(input.id, { status: input.status });
+        await db.updateProductionRun(input.id, { status: input.status });
+
+        // When production is completed or approved, add to inventory and sync to WooCommerce
+        if (input.status === "completed" || input.status === "approved") {
+          try {
+            // Get the product being produced
+            const products = await db.getProductById(run.productId);
+            if (products.length > 0) {
+              const product = products[0];
+              const newStock = (product.currentStock || 0) + run.quantity;
+              
+              // Update product stock in TraceCore
+              await db.updateProduct(run.productId, { currentStock: newStock });
+              
+              // Sync updated stock to WooCommerce
+              await syncInventoryToWooCommerce({
+                productId: run.productId,
+                quantity: newStock,
+                productName: product.name,
+                sku: product.sku || undefined,
+              });
+              
+              console.log(`[Production] Synced ${product.name} stock (${newStock} units) to WooCommerce`);
+            }
+          } catch (syncError) {
+            console.error("[Production] Failed to sync inventory to WooCommerce:", syncError);
+            // Don't throw - production update succeeded, sync is secondary
+          }
+        }
+
+        return { success: true, message: "Production status updated" };
       } catch (error) {
         console.error("[Production] UpdateStatus error:", error);
         throw error;
       }
     }),
 });
+
