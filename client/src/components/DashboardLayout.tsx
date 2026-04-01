@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
+import { getLoginUrl } from '@/const';
 import {
   LayoutDashboard,
   Truck,
@@ -123,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (loading || isAuthenticated) return;
     console.log('[Auth] Not authenticated, redirecting to login');
-    window.location.href = '/api/oauth/login';
+    window.location.href = getLoginUrl();
   }, [loading, isAuthenticated]);
 
   if (loading) {
