@@ -124,7 +124,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (loading || isAuthenticated) return;
     console.log('[Auth] Not authenticated, redirecting to login');
-    window.location.href = getLoginUrl();
+    const origin = window.location.origin;
+    window.location.href = `/api/oauth/login?origin=${encodeURIComponent(origin)}`;
   }, [loading, isAuthenticated]);
 
   if (loading) {

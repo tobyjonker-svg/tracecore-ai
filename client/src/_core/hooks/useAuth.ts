@@ -19,6 +19,7 @@ export function useAuth(options?: UseAuthOptions) {
     refetchOnWindowFocus: false,
     // Don't treat errors as fatal - user might still be authenticated
     throwOnError: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -76,6 +77,20 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.isPending,
   ]);
 
+  // Add timeout to prevent infinite loading on mobile
+  useEffect(() => {
+    if (!meQuery.isLoading) return;
+    const timeout = setTimeout(() => {
+      console.warn('[Auth] Query timeout - forcing redirect to login');
+      if (typeof window !== 'undefined') {
+        const origin = window.location.origin;
+        window.location.href = `/api/oauth/login?origin=${encodeURIComponent(origin)}`;
+      }
+    }, 8000); // 8 second timeout
+    return () => clearTimeout(timeout);
+  }, [meQuery.isLoading]);
+
+  // Redirect if not authenticated (must be at top level, not in conditional)
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
