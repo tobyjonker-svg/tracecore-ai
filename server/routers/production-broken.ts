@@ -42,29 +42,27 @@ export const productionRouter = router({
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
         const { rawMaterials, ...runData } = input;
-        const result = await db.createProductionRun({
+        const run = await db.createProductionRun({
           workspaceId: workspace.id,
           ...runData,
         });
 
         // Add raw materials if provided
-        if (rawMaterials && rawMaterials.length > 0) {
-          const runId = (result as any)?.insertId;
-          if (runId) {
-            for (const material of rawMaterials) {
-              await db.createProductionRunMaterial({
-                workspaceId: workspace.id,
-                productionRunId: runId,
-                inputId: material.inputId,
-                quantityUsed: material.quantityUsed.toString(),
-                unit: material.unit || "kg",
-                notes: material.notes,
-              });
-            }
+        if (rawMaterials && rawMaterials.length > 0 && run && run.length > 0) {
+          const runId = run[0]?.id;
+          for (const material of rawMaterials) {
+            await db.createProductionRunMaterial({
+              workspaceId: workspace.id,
+              productionRunId: runId,
+              inputId: material.inputId,
+              quantityUsed: material.quantityUsed.toString(),
+              unit: material.unit || "kg",
+              notes: material.notes,
+            });
           }
         }
 
-        return { success: true, message: "Production run created" };
+        return run;
       } catch (error) {
         console.error("[Production] Create error:", error);
         throw error;
@@ -89,8 +87,8 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.length === 0 || run[0].workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
@@ -108,8 +106,8 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.length === 0 || run[0].workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
@@ -130,8 +128,8 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.length === 0 || run[0].workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
@@ -139,7 +137,7 @@ export const productionRouter = router({
         const materials = await db.getProductionRunMaterials(input.id);
 
         return {
-          ...runs[0],
+          ...run[0],
           rawMaterials: materials,
         };
       } catch (error) {
@@ -210,26 +208,24 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.length === 0 || run[0].workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
-        const run = runs[0];
         await db.updateProductionRun(input.id, { status: input.status });
 
         // When production is completed or approved, add to inventory and sync to WooCommerce
         if (input.status === "completed" || input.status === "approved") {
           try {
             // Get the product being produced
-            const products = await db.getProductById(run.productId);
+            const products = await db.getProductById(run[0].productId);
             if (products && products.length > 0) {
               const product = products[0];
-              const currentProdStock = typeof product.currentStock === 'string' ? parseFloat(product.currentStock) : product.currentStock || 0;
-              const newStock = currentProdStock + run.quantity;
+              const newStock = (product.currentStock || 0) + run[0].quantity;
 
               // Update product stock in TraceCore
-              await db.updateProduct(run.productId, { currentStock: newStock });
+              await db.updateProduct(run[0].productId, { currentStock: newStock });
 
               // Deduct raw materials from inventory
               const materials = await db.getProductionRunMaterials(input.id);
@@ -245,12 +241,14 @@ export const productionRouter = router({
               }
 
               // Sync updated stock to WooCommerce
-              await syncInventoryToWooCommerce({
-                productId: run.productId,
-                quantity: newStock,
-                productName: product.name,
-                sku: product.sku || undefined,
-              });
+              if (run && run.length > 0) {
+                await syncInventoryToWooCommerce({
+                  productId: run[0].productId,
+                  quantity: newStock,
+                  productName: product.name,
+                  sku: product.sku || undefined,
+                });
+              }
 
               console.log(`[Production] Synced ${product.name} stock (${newStock} units) to WooCommerce`);
             }
