@@ -99,13 +99,6 @@
       "when": 1774815485932,
       "tag": "0013_unique_william_stryker",
       "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "5",
-      "when": 1775042603761,
-      "tag": "0014_romantic_carnage",
-      "breakpoints": true
     }
   ]
 }

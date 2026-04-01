@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, InsertProduct, products, InsertInventoryActivity, inventoryActivity, productionRunMaterials, InsertProductionRunMaterial } from "../drizzle/schema";
+import { InsertUser, users, InsertProduct, products, InsertInventoryActivity, inventoryActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1575,30 +1575,4 @@ export async function getShipmentById(id: number) {
     console.error("[Database] Failed to get shipment by ID:", error);
     throw error;
   }
-}
-
-
-// Production Run Materials - track raw materials used in production runs
-export async function createProductionRunMaterial(data: InsertProductionRunMaterial) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.insert(productionRunMaterials).values(data);
-}
-
-export async function getProductionRunMaterials(productionRunId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(productionRunMaterials).where(eq(productionRunMaterials.productionRunId, productionRunId));
-}
-
-export async function deleteProductionRunMaterial(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.delete(productionRunMaterials).where(eq(productionRunMaterials.id, id));
-}
-
-export async function deleteProductionRunMaterials(productionRunId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.delete(productionRunMaterials).where(eq(productionRunMaterials.productionRunId, productionRunId));
 }

@@ -17,7 +17,6 @@ export function Inputs() {
     costPerUnit: "",
     unit: "kg",
     supplierId: "",
-    amountPurchased: "",
   });
 
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -38,7 +37,6 @@ export function Inputs() {
         costPerUnit: input.costPerUnit.toString(),
         unit: input.unit,
         supplierId: input.supplierId?.toString() || "",
-        amountPurchased: input.amountPurchased?.toString() || "",
       });
     } else {
       setEditingInput(null);
@@ -48,7 +46,6 @@ export function Inputs() {
         costPerUnit: "",
         unit: "kg",
         supplierId: "",
-        amountPurchased: "",
       });
     }
     setIsDialogOpen(true);
@@ -69,7 +66,6 @@ export function Inputs() {
           costPerUnit: parseFloat(formData.costPerUnit),
           unit: formData.unit,
           supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
-          amountPurchased: formData.amountPurchased ? parseFloat(formData.amountPurchased) : undefined,
         });
         toast.success("Input updated successfully");
       } else {
@@ -79,7 +75,6 @@ export function Inputs() {
           costPerUnit: parseFloat(formData.costPerUnit),
           unit: formData.unit,
           supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
-          amountPurchased: formData.amountPurchased ? parseFloat(formData.amountPurchased) : undefined,
         });
         toast.success("Input created successfully");
       }
@@ -157,13 +152,9 @@ export function Inputs() {
                       <span className="text-gray-600">Cost per {input.unit}:</span>
                       <p className="font-semibold">R{parseFloat(input.costPerUnit).toFixed(2)}</p>
                     </div>
-                      <div>
+                    <div>
                       <span className="text-gray-600">Current Stock:</span>
                       <p className="font-semibold">{input.currentStock} {input.unit}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Amount Purchased:</span>
-                      <p className="font-semibold">{input.amountPurchased || 0} {input.unit}</p>
                     </div>
                   </div>
                 </div>
@@ -250,17 +241,6 @@ export function Inputs() {
                 onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
               />
               <p className="text-xs text-gray-500 mt-1">Link to a supplier for tracking pricing</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Amount Purchased (Optional)</label>
-              <Input
-                type="number"
-                placeholder="Total amount purchased"
-                step="0.01"
-                value={formData.amountPurchased}
-                onChange={(e) => setFormData({ ...formData, amountPurchased: e.target.value })}
-              />
-              <p className="text-xs text-gray-500 mt-1">Total quantity purchased from supplier</p>
             </div>
             <div className="flex gap-2 justify-end pt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

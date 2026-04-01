@@ -8,9 +8,6 @@ import { registerAdminLoginRoute } from "./admin-login";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { createTrackerEndpoint } from "./tracker-endpoint";
-import { createPixelEndpoint } from "./pixel-endpoint";
-import { validateWooCommerceWebhook } from "./webhook-validator";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,24 +34,10 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  
-  // development mode uses Vite, production mode uses static files
-  // IMPORTANT: Serve static files FIRST so / gets index.html before API routes
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Admin login endpoint
   registerAdminLoginRoute(app);
-  // Tracker and Pixel endpoints for MycoAlchemy
-  app.use(createTrackerEndpoint());
-  app.use(createPixelEndpoint());
-  // Webhook validation middleware for WooCommerce
-  app.post("/api/woocommerce/webhook", validateWooCommerceWebhook);
   // tRPC API
   app.use(
     "/api/trpc",
@@ -63,6 +46,12 @@ async function startServer() {
       createContext,
     })
   );
+  // development mode uses Vite, production mode uses static files
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

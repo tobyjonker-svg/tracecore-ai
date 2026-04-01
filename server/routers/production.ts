@@ -26,14 +26,6 @@ export const productionRouter = router({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         notes: z.string().optional(),
-        rawMaterials: z.array(
-          z.object({
-            inputId: z.number(),
-            quantityUsed: z.number(),
-            unit: z.string().optional(),
-            notes: z.string().optional(),
-          })
-        ).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -41,30 +33,10 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const { rawMaterials, ...runData } = input;
-        const result = await db.createProductionRun({
+        return await db.createProductionRun({
           workspaceId: workspace.id,
-          ...runData,
+          ...input,
         });
-
-        // Add raw materials if provided
-        if (rawMaterials && rawMaterials.length > 0) {
-          const runId = (result as any)?.insertId;
-          if (runId) {
-            for (const material of rawMaterials) {
-              await db.createProductionRunMaterial({
-                workspaceId: workspace.id,
-                productionRunId: runId,
-                inputId: material.inputId,
-                quantityUsed: material.quantityUsed.toString(),
-                unit: material.unit || "kg",
-                notes: material.notes,
-              });
-            }
-          }
-        }
-
-        return { success: true, message: "Production run created" };
       } catch (error) {
         console.error("[Production] Create error:", error);
         throw error;
@@ -89,8 +61,8 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
@@ -108,13 +80,11 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
-        // Delete associated raw materials
-        await db.deleteProductionRunMaterials(input.id);
         await db.deleteProductionRun(input.id);
         return { success: true };
       } catch (error) {
@@ -130,75 +100,14 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
-        // Get raw materials for this run
-        const materials = await db.getProductionRunMaterials(input.id);
-
-        return {
-          ...runs[0],
-          rawMaterials: materials,
-        };
+        return run;
       } catch (error) {
         console.error("[Production] GetById error:", error);
-        throw error;
-      }
-    }),
-
-  getRawMaterials: protectedProcedure
-    .input(z.object({ productionRunId: z.number() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
-        if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
-
-        return await db.getProductionRunMaterials(input.productionRunId);
-      } catch (error) {
-        console.error("[Production] GetRawMaterials error:", error);
-        throw error;
-      }
-    }),
-
-  addRawMaterial: protectedProcedure
-    .input(
-      z.object({
-        productionRunId: z.number(),
-        inputId: z.number(),
-        quantityUsed: z.number(),
-        unit: z.string().optional(),
-        notes: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
-        if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
-
-        return await db.createProductionRunMaterial({
-          workspaceId: workspace.id,
-          productionRunId: input.productionRunId,
-          inputId: input.inputId,
-          quantityUsed: input.quantityUsed.toString(),
-          unit: input.unit || "kg",
-          notes: input.notes,
-        });
-      } catch (error) {
-        console.error("[Production] AddRawMaterial error:", error);
-        throw error;
-      }
-    }),
-
-  removeRawMaterial: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        await db.deleteProductionRunMaterial(input.id);
-        return { success: true };
-      } catch (error) {
-        console.error("[Production] RemoveRawMaterial error:", error);
         throw error;
       }
     }),
@@ -210,12 +119,11 @@ export const productionRouter = router({
         const workspace = await db.getWorkspaceByUserId(ctx.user.id);
         if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
 
-        const runs = await db.getProductionRunById(input.id);
-        if (!runs || runs.length === 0 || runs[0].workspaceId !== workspace.id) {
+        const run = await db.getProductionRunById(input.id);
+        if (!run || run.workspaceId !== workspace.id) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Production run not found" });
         }
 
-        const run = runs[0];
         await db.updateProductionRun(input.id, { status: input.status });
 
         // When production is completed or approved, add to inventory and sync to WooCommerce
@@ -223,27 +131,13 @@ export const productionRouter = router({
           try {
             // Get the product being produced
             const products = await db.getProductById(run.productId);
-            if (products && products.length > 0) {
+            if (products.length > 0) {
               const product = products[0];
-              const currentProdStock = typeof product.currentStock === 'string' ? parseFloat(product.currentStock) : product.currentStock || 0;
-              const newStock = currentProdStock + run.quantity;
-
+              const newStock = (product.currentStock || 0) + run.quantity;
+              
               // Update product stock in TraceCore
               await db.updateProduct(run.productId, { currentStock: newStock });
-
-              // Deduct raw materials from inventory
-              const materials = await db.getProductionRunMaterials(input.id);
-              for (const material of materials) {
-                const inputs = await db.getInputById(material.inputId);
-                if (inputs && inputs.length > 0) {
-                  const inputItem = inputs[0];
-                  const currentStock = typeof inputItem.currentStock === 'string' ? parseFloat(inputItem.currentStock) : inputItem.currentStock || 0;
-                  const newInputStock = Math.max(0, currentStock - parseFloat(material.quantityUsed));
-                  await db.updateInput(material.inputId, { currentStock: newInputStock.toString() });
-                  console.log(`[Production] Deducted ${material.quantityUsed} ${material.unit} from ${inputItem.name}`);
-                }
-              }
-
+              
               // Sync updated stock to WooCommerce
               await syncInventoryToWooCommerce({
                 productId: run.productId,
@@ -251,11 +145,12 @@ export const productionRouter = router({
                 productName: product.name,
                 sku: product.sku || undefined,
               });
-
+              
               console.log(`[Production] Synced ${product.name} stock (${newStock} units) to WooCommerce`);
             }
           } catch (syncError) {
-            console.error("[Production] Failed to sync inventory:", syncError);
+            console.error("[Production] Failed to sync inventory to WooCommerce:", syncError);
+            // Don't throw - production update succeeded, sync is secondary
           }
         }
 
@@ -266,3 +161,4 @@ export const productionRouter = router({
       }
     }),
 });
+
