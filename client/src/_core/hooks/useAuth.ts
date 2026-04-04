@@ -101,7 +101,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (window.location.href.includes('auth.manus.im')) return;
     if (window.location.href.includes('/api/oauth')) return;
 
-    window.location.href = redirectPath
+    window.location.href = redirectPath;
   }, [
     redirectOnUnauthenticated,
     redirectPath,
