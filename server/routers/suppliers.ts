@@ -291,4 +291,44 @@ export const suppliersRouter = router({
         throw error instanceof TRPCError ? error : new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
     }),
+
+  // Get what a supplier supplies (linked inputs)
+  getSupplierInputs: protectedProcedure
+    .input(z.object({ supplierId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "FORBIDDEN", message: "No workspace found" });
+        return await db.getSupplierInputs(workspace.id, input.supplierId);
+      } catch (error) {
+        throw error instanceof TRPCError ? error : new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }),
+
+  // Link an input to a supplier
+  addSupplierInput: protectedProcedure
+    .input(z.object({ supplierId: z.number(), inputId: z.number(), notes: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "FORBIDDEN", message: "No workspace found" });
+        return await db.addSupplierInput({ workspaceId: workspace.id, ...input });
+      } catch (error) {
+        throw error instanceof TRPCError ? error : new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }),
+
+  // Remove a linked input from a supplier
+  removeSupplierInput: protectedProcedure
+    .input(z.object({ supplierId: z.number(), inputId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "FORBIDDEN", message: "No workspace found" });
+        return await db.removeSupplierInput(input.supplierId, input.inputId);
+      } catch (error) {
+        throw error instanceof TRPCError ? error : new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }),
 });
+// This line intentionally left blank

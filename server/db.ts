@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, InsertProduct, products, InsertInventoryActivity, inventoryActivity } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -76,6 +76,93 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
   }
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.execute(sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`);
+  const rows = (result as any)[0] ?? result;
+  if (Array.isArray(rows) && rows.length > 0) return rows[0] as any;
+  return null;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.execute(sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`);
+  const rows = (result as any)[0] ?? result;
+  if (Array.isArray(rows) && rows.length > 0) return rows[0] as any;
+  return null;
+}
+
+export async function createUser(data: { name: string; email: string; passwordHash: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.execute(sql`
+    INSERT INTO users (name, email, openId, loginMethod, passwordHash, role, createdAt, updatedAt)
+    VALUES (${data.name}, ${data.email}, ${data.email}, 'local', ${data.passwordHash}, 'user', NOW(), NOW())
+  `);
+  return await getUserByEmail(data.email);
+}
+
+export async function getAiMessageCount(userId: number): Promise<{ count: number, limit: number }> {
+  const db = await getDb();
+  if (!db) return { count: 0, limit: 100 };
+  try {
+    const userResult = await db.execute(sql`SELECT aiMessagesUsedToday, aiMessagesResetDate, subscriptionStatus FROM users WHERE id = ${userId} LIMIT 1`);
+    const rows = (userResult as any)[0] ?? userResult;
+    const user = Array.isArray(rows) ? rows[0] : null;
+    if (!user) return { count: 0, limit: 100 };
+    const today = new Date().toISOString().split('T')[0];
+    const resetDate = user.aiMessagesResetDate ? String(user.aiMessagesResetDate).split('T')[0] : null;
+    if (resetDate !== today) {
+      await db.execute(sql`UPDATE users SET aiMessagesUsedToday = 0, aiMessagesResetDate = CURDATE() WHERE id = ${userId}`);
+      return { count: 0, limit: user.subscriptionStatus === 'active' ? 100 : 20 };
+    }
+    const limit = user.subscriptionStatus === 'active' ? 100 : 20;
+    return { count: user.aiMessagesUsedToday || 0, limit };
+  } catch(e) { return { count: 0, limit: 100 }; }
+}
+
+export async function incrementAiMessageCount(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql`UPDATE users SET aiMessagesUsedToday = aiMessagesUsedToday + 1 WHERE id = ${userId}`);
+  } catch(e) {}
+}
+
+export async function getOrderByNumber(workspaceId: number, orderNumber: string) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.execute(sql`SELECT * FROM orders WHERE workspaceId = ${workspaceId} AND orderNumber = ${orderNumber} LIMIT 1`);
+    const rows = (result as any)[0] ?? result;
+    if (Array.isArray(rows) && rows.length > 0) return rows[0] as any;
+    return null;
+  } catch(e) { return null; }
+}
+
+export async function setUserCurrency(userId: number, currency: string) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql`UPDATE users SET currency = ${currency} WHERE id = ${userId}`);
+  } catch(e) {}
+}
+
+export async function setUserTrial(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await db.execute(sql`UPDATE users SET trialEndsAt = ${trialEnd}, subscriptionStatus = 'trial' WHERE id = ${userId}`);
+}
+
+export async function expireTrials() {
+  const db = await getDb();
+  if (!db) return;
+  await db.execute(sql`UPDATE users SET subscriptionStatus = 'expired' WHERE subscriptionStatus = 'trial' AND trialEndsAt < NOW() AND id != 1`);
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -280,23 +367,24 @@ export async function createWorkspace(userId: number, name: string = 'My Workspa
 
 export async function getWorkspaceByUserId(userId: number) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get workspace: database not available");
-    return undefined;
-  }
-
+  if (!db) return null;
   try {
-    const workspace = await db
-      .select()
-      .from(workspaces)
-      .where(eq(workspaces.userId, userId))
-      .limit(1);
-
-    return workspace.length > 0 ? workspace[0] : undefined;
-  } catch (error) {
-    console.error("[Database] Failed to get workspace:", error);
-    throw error;
-  }
+    // First check if user owns a workspace
+    const result = await db.execute(sql`SELECT * FROM workspaces WHERE userId = ${userId} LIMIT 1`);
+    const rows = (result as any)[0] ?? result;
+    if (Array.isArray(rows) && rows.length > 0) return rows[0] as any;
+    
+    // If not, check if user is a member of another workspace
+    const memberResult = await db.execute(sql`
+      SELECT w.* FROM workspaces w
+      INNER JOIN workspaceMembers wm ON wm.workspaceId = w.id
+      WHERE wm.userId = ${userId} LIMIT 1
+    `);
+    const memberRows = (memberResult as any)[0] ?? memberResult;
+    if (Array.isArray(memberRows) && memberRows.length > 0) return memberRows[0] as any;
+    
+    return null;
+  } catch(e) { return null; }
 }
 
 export async function getWorkspaceWithPayments(workspaceId: number) {
@@ -1450,10 +1538,13 @@ export async function createProductionRun(data: {
 
   try {
     const { productionRuns } = await import("../drizzle/schema");
-    return await db.insert(productionRuns).values({
+    const result = await db.insert(productionRuns).values({
       ...data,
       status: "planned",
     });
+    const insertId = (result as any)[0]?.insertId ?? (result as any).insertId;
+    console.log("[DB] createProductionRun insertId:", insertId);
+    return { insertId };
   } catch (error) {
     console.error("[Database] Failed to create production run:", error);
     throw error;
@@ -1575,4 +1666,82 @@ export async function getShipmentById(id: number) {
     console.error("[Database] Failed to get shipment by ID:", error);
     throw error;
   }
+}
+
+// SupplierInputs - what each supplier supplies
+export async function getSupplierInputs(workspaceId: number, supplierId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    if (supplierId) {
+      const result = await db.execute(sql`SELECT si.*, i.name as inputName, i.unit FROM supplierInputs si JOIN inputs i ON si.inputId = i.id WHERE si.workspaceId = ${workspaceId} AND si.supplierId = ${supplierId}`);
+      return (result as any)[0] ?? result;
+    }
+    const result = await db.execute(sql`SELECT si.*, i.name as inputName, i.unit FROM supplierInputs si JOIN inputs i ON si.inputId = i.id WHERE si.workspaceId = ${workspaceId}`);
+    return (result as any)[0] ?? result;
+  } catch(e) { console.error("[DB] getSupplierInputs error:", e); throw e; }
+}
+
+export async function addSupplierInput(data: { workspaceId: number; supplierId: number; inputId: number; notes?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`INSERT INTO supplierInputs (workspaceId, supplierId, inputId, notes) VALUES (${data.workspaceId}, ${data.supplierId}, ${data.inputId}, ${data.notes || null}) ON DUPLICATE KEY UPDATE notes = ${data.notes || null}`);
+    return { success: true };
+  } catch(e) { console.error("[DB] addSupplierInput error:", e); throw e; }
+}
+
+export async function removeSupplierInput(supplierId: number, inputId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`DELETE FROM supplierInputs WHERE supplierId = ${supplierId} AND inputId = ${inputId}`);
+    return { success: true };
+  } catch(e) { console.error("[DB] removeSupplierInput error:", e); throw e; }
+}
+
+// ProductionRunInputs - materials used in a production run
+export async function getProductionRunInputs(productionRunId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    const result = await db.execute(sql`SELECT pri.*, i.name as inputName, i.unit as inputUnit FROM productionRunInputs pri JOIN inputs i ON pri.inputId = i.id WHERE pri.productionRunId = ${productionRunId}`);
+    return (result as any)[0] ?? result;
+  } catch(e) { console.error("[DB] getProductionRunInputs error:", e); throw e; }
+}
+
+export async function addProductionRunInput(data: { workspaceId: number; productionRunId: number; inputId: number; quantityUsed: number; unit?: string; notes?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`INSERT INTO productionRunInputs (workspaceId, productionRunId, inputId, quantityUsed, unit, notes) VALUES (${data.workspaceId}, ${data.productionRunId}, ${data.inputId}, ${data.quantityUsed}, ${data.unit || "kg"}, ${data.notes || null})`);
+    return { success: true };
+  } catch(e) { console.error("[DB] addProductionRunInput error:", e); throw e; }
+}
+
+export async function deleteProductionRunInputs(productionRunId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`DELETE FROM productionRunInputs WHERE productionRunId = ${productionRunId}`);
+    return { success: true };
+  } catch(e) { console.error("[DB] deleteProductionRunInputs error:", e); throw e; }
+}
+
+export async function addInputStock(inputId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`UPDATE inputs SET currentStock = currentStock + ${quantity} WHERE id = ${inputId}`);
+    return { success: true };
+  } catch(e) { console.error("[DB] addInputStock error:", e); throw e; }
+}
+
+export async function deductInputStock(inputId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.execute(sql`UPDATE inputs SET currentStock = GREATEST(0, currentStock - ${quantity}) WHERE id = ${inputId}`);
+    return { success: true };
+  } catch(e) { console.error("[DB] deductInputStock error:", e); throw e; }
 }

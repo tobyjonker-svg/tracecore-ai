@@ -83,7 +83,7 @@ export function ReportsMVP() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">R{totalRevenue.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
@@ -91,7 +91,7 @@ export function ReportsMVP() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Avg Order Value</p>
-              <p className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">R{avgOrderValue.toFixed(2)}</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={250}>
@@ -123,7 +123,7 @@ export function ReportsMVP() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Inventory Value</p>
-              <p className="text-2xl font-bold">${totalInventoryValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">R{totalInventoryValue.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Low Stock Items</p>

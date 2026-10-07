@@ -89,7 +89,7 @@ export const woocommerceRouter = router({
         const orderData = {
           workspaceId,
           orderNumber: input.orderNumber,
-          customerId: input.customerEmail,
+          customerId: String(input.customerId || input.customerEmail || 'guest'),
           customerName: input.customerName,
           productId: input.items[0]?.productId || 1,
           quantity: input.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -220,6 +220,8 @@ export const woocommerceRouter = router({
   /**
    * Test webhook connection
    */
+  pullOrdersFromWooCommerce: protectedProcedure.mutation(async({ctx})=>{try{const wooSync=require("../_core/woocommerce-sync");const workspace=await db.getWorkspaceByUserId(ctx.user.id);const wcOrders=await wooSync.fetchWooCommerceOrders(1);let imported=0;for(const wco of wcOrders){const orderNumber=String(wco.number||wco.id);const fn=(wco.billing&&wco.billing.first_name)||"";const ln=(wco.billing&&wco.billing.last_name)||"";const cn=(fn+" "+ln).trim()||(wco.billing&&wco.billing.email)||"Unknown";const items=wco.line_items||[];const qty=items.reduce((s,i)=>s+(i.quantity||0),0)||1;const st=wco.status==="completed"?"shipped":wco.status==="processing"?"confirmed":"pending";const existingOrder=await db.getOrderByNumber(workspace.id,orderNumber);if(existingOrder){imported++;continue;}try{await db.createOrder({workspaceId:workspace.id,orderNumber,customerId:String(wco.customer_id||wco.id||'guest'),customerName:cn,productId:1,quantity:qty,totalPrice:String(wco.total||"0"),status:st,dueDate:undefined});imported++;}catch(e:any){if(e?.message?.includes('Duplicate')||e?.code==='ER_DUP_ENTRY'){/* skip existing */}else{throw e;}};}return{success:true,imported,total:wcOrders.length};}catch(error){throw error;}}),
+  updateOrderStatus: protectedProcedure.input(z.object({orderId:z.number(),wcOrderId:z.number(),status:z.string()})).mutation(async({ctx,input})=>{try{const wooSync=require("../_core/woocommerce-sync");const wcStatus=input.status==="shipped"?"completed":input.status==="confirmed"?"processing":"on-hold";await wooSync.updateWooCommerceOrderStatus(input.wcOrderId,wcStatus);await db.updateOrder(input.orderId,{status:input.status});return{success:true};}catch(error){throw error;}}),
   testWebhookConnection: publicProcedure
     .input(z.object({ testOrderId: z.number().optional() }))
     .mutation(async ({ input, ctx }) => {

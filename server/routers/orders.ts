@@ -2,6 +2,16 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 import { TRPCError } from "@trpc/server";
+import { updateWooCommerceOrderStatus } from "../_core/woocommerce-sync";
+
+// Map TraceCore status to WooCommerce status
+const toWcStatus: Record<string, string> = {
+  pending: "pending",
+  processing: "processing",
+  shipped: "on-hold",
+  delivered: "completed",
+  cancelled: "cancelled",
+};
 
 export const ordersRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -68,7 +78,18 @@ export const ordersRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
 
-        return await db.updateOrder(input.id, input);
+        await db.updateOrder(input.id, input);
+        // Sync status to WooCommerce if status changed
+        if (input.status) {
+          try {
+            const wcStatus = toWcStatus[input.status] || "pending";
+            await updateWooCommerceOrderStatus(parseInt(order.orderNumber), wcStatus);
+            console.log("[Orders] Synced order", order.orderNumber, "to WooCommerce:", wcStatus);
+          } catch (wcError) {
+            console.error("[Orders] WC sync failed:", wcError);
+          }
+        }
+        return { success: true };
       } catch (error) {
         console.error("[Orders] Update error:", error);
         throw error;
@@ -126,10 +147,21 @@ export const ordersRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
 
-        return await db.updateOrder(input.id, { status: input.status });
+        await db.updateOrder(input.id, { status: input.status });
+        // Sync status to WooCommerce
+        try {
+          const wcStatus = toWcStatus[input.status] || "pending";
+          await updateWooCommerceOrderStatus(parseInt(order.orderNumber), wcStatus);
+          console.log("[Orders] Synced order", order.orderNumber, "to WooCommerce status:", wcStatus);
+        } catch (wcError) {
+          console.error("[Orders] Failed to sync status to WooCommerce:", wcError);
+        }
+        return { success: true };
       } catch (error) {
         console.error("[Orders] UpdateStatus error:", error);
         throw error;
       }
     }),
+
+  // Also sync when using the general update mutation
 });

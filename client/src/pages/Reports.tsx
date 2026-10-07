@@ -1,237 +1,191 @@
-/**
- * TraceCore AI — Reports Page
- * Design: Soft-Dark Enterprise
- * - Analytics charts: production, orders, stock trends
- * - All metrics calculated from actual app state
- */
-
-import { useApp } from '@/contexts/AppContext';
-import { BarChart3, TrendingUp, DollarSign, Zap, Lock } from 'lucide-react';
-import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell,
-} from 'recharts';
-
-const PRODUCT_COLORS = [
-  'oklch(0.65 0.18 265)',
-  'oklch(0.72 0.15 200)',
-  'oklch(0.68 0.16 145)',
-  'oklch(0.72 0.18 55)',
-  'oklch(0.65 0.2 15)',
-];
-
-const tooltipStyle = {
-  contentStyle: {
-    background: 'oklch(0.165 0.009 265)',
-    border: '1px solid oklch(1 0 0 / 9%)',
-    borderRadius: '8px',
-    fontSize: '12px',
-    color: 'oklch(0.92 0.005 265)',
-  },
-};
+import { formatCurrency } from '@/lib/currency';
+import { trpc } from '@/lib/trpc';
+import { TrendingUp, ShoppingCart, Package, Factory, Users, ArrowRight, Download } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useLocation } from 'wouter';
 
 export default function Reports() {
-  const { state } = useApp();
+  const [, navigate] = useLocation();
+  const { data: orders = [] } = trpc.orders.list.useQuery();
+  const { data: products = [] } = trpc.products.list.useQuery();
+  const { data: runs = [] } = trpc.production.list.useQuery();
+  const { data: inputs = [] } = trpc.inputs.list.useQuery();
+  const { data: suppliers = [] } = trpc.suppliers.list.useQuery();
 
-  // Calculate metrics from actual app state
-  const totalProductionRuns = state.productionRuns.length;
-  const totalUnitsProduced = state.productionRuns.reduce((sum, run) => sum + run.quantity, 0);
-  
-  // Calculate revenue from shipped orders (assuming $50 per unit as placeholder)
-  const totalRevenue = state.orders
-    .filter(o => o.status === 'Shipped')
-    .reduce((sum, order) => {
-      const orderTotal = order.items.reduce((itemSum, item) => itemSum + (item.quantity * 50), 0);
-      return sum + orderTotal;
-    }, 0);
+  const totalRevenue = (orders as any[]).reduce((s: number, o: any) => s + parseFloat(o.totalPrice || 0), 0);
+  const delivered = (orders as any[]).filter((o: any) => o.status === 'delivered');
+  const avgOrder = totalRevenue / Math.max((orders as any[]).length, 1);
+  const totalUnits = (runs as any[]).reduce((s: number, r: any) => s + (r.quantity || 0), 0);
+  const approvedRuns = (runs as any[]).filter((r: any) => r.status === 'approved' || r.status === 'completed');
+  const lowStock = (products as any[]).filter((p: any) => (p.currentStock || 0) <= (p.lowStockThreshold || 10));
+  const lowInputs = (inputs as any[]).filter((i: any) => (i.currentStock || 0) <= (i.lowStockThreshold || 5));
+  const totalStockValue = (products as any[]).reduce((s: number, p: any) => s + ((p.currentStock || 0) * parseFloat(p.sellingPrice || 0)), 0);
 
-  // Calculate cost (assuming 40% of revenue)
-  const totalCost = totalRevenue * 0.4;
-  const margin = totalRevenue > 0 ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100) : 0;
+  const ordersByStatus = [
+    { label: 'Pending', count: (orders as any[]).filter((o: any) => o.status === 'pending').length, color: 'bg-yellow-400' },
+    { label: 'Processing', count: (orders as any[]).filter((o: any) => o.status === 'processing').length, color: 'bg-blue-400' },
+    { label: 'Shipped', count: (orders as any[]).filter((o: any) => o.status === 'shipped').length, color: 'bg-purple-400' },
+    { label: 'Delivered', count: (orders as any[]).filter((o: any) => o.status === 'delivered').length, color: 'bg-green-400' },
+  ];
+  const maxOrderCount = Math.max(...ordersByStatus.map(s => s.count), 1);
 
-  // Product distribution from actual stock
-  const productDistribution = state.products.map(p => ({
-    name: p.name.length > 20 ? p.name.slice(0, 18) + '…' : p.name,
-    value: p.stockOnHand,
+  const productStock = (products as any[]).map((p: any) => ({
+    name: p.name,
+    stock: p.currentStock || 0,
+    threshold: p.lowStockThreshold || 10,
+    value: (p.currentStock || 0) * parseFloat(p.sellingPrice || 0),
+    isLow: (p.currentStock || 0) <= (p.lowStockThreshold || 10),
   }));
 
-  // Generate monthly data from production runs
-  const monthlyData: Record<string, { month: string; units: number; runs: number }> = {};
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
-  months.forEach(month => {
-    monthlyData[month] = { month, units: 0, runs: 0 };
-  });
-
-  state.productionRuns.forEach(run => {
-    const date = new Date(run.createdAt);
-    const month = months[date.getMonth()];
-    if (monthlyData[month]) {
-      monthlyData[month].units += run.quantity;
-      monthlyData[month].runs += 1;
-    }
-  });
-
-  const productionData = Object.values(monthlyData).filter(d => d.units > 0 || d.runs > 0);
-  
-  // If no data, show empty state
-  const hasData = productionData.length > 0 || state.products.length > 0 || state.orders.length > 0;
-
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Reports</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Analytics and insights for your manufacturing operations.
-        </p>
+    <div className="p-4 md:p-6 space-y-6 max-w-5xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Business performance overview</p>
+        </div>
       </div>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total Revenue', value: `$${(totalRevenue / 1000).toFixed(1)}k`, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
-          { label: 'Profit Margin', value: `${margin}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/15' },
-          { label: 'Units Produced', value: totalUnitsProduced, icon: BarChart3, color: 'text-violet-400', bg: 'bg-violet-500/15' },
-          { label: 'Production Runs', value: totalProductionRuns, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/15' },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="tc-card">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${bg}`}>
-              <Icon className={`w-4.5 h-4.5 ${color}`} />
+          { label: 'Total Revenue', value: formatCurrency(totalRevenue, user), sub: `${(orders as any[]).length} orders`, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-500/10' },
+          { label: 'Avg Order Value', value: formatCurrency(avgOrder, user), sub: `${delivered.length} delivered`, icon: ShoppingCart, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+          { label: 'Units Produced', value: totalUnits, sub: `${approvedRuns.length} completed runs`, icon: Factory, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+          { label: 'Stock Value', value: formatCurrency(totalStockValue, user), sub: `${(products as any[]).length} products`, icon: Package, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+        ].map((c, i) => (
+          <div key={i} className="bg-card border border-border rounded-xl p-4">
+            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", c.bg)}>
+              <c.icon className={cn("w-4 h-4", c.color)} />
             </div>
-            <p className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+            <p className="text-xl font-bold">{c.value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{c.label}</p>
+            <p className="text-xs text-muted-foreground/60">{c.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
-        {/* Production Volume */}
-        <div className="tc-card">
-          <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] mb-1">Production Volume</h3>
-          <p className="text-xs text-muted-foreground mb-4">Units produced by month</p>
-          {productionData.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-              No production data yet. Add production runs to see charts.
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Orders by status */}
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="font-semibold text-sm mb-4">Orders by Status</h3>
+          {(orders as any[]).length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No orders yet</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={productionData}>
-                <defs>
-                  <linearGradient id="unitsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="oklch(0.65 0.18 265)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="oklch(0.65 0.18 265)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 6%)" />
-                <XAxis dataKey="month" tick={{ fill: 'oklch(0.58 0.012 265)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'oklch(0.58 0.012 265)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip {...tooltipStyle} />
-                <Area type="monotone" dataKey="units" stroke="oklch(0.65 0.18 265)" strokeWidth={2} fill="url(#unitsGrad)" name="Units" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="space-y-3">
+              {ordersByStatus.map((s, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">{s.label}</span>
+                    <span className="font-medium">{s.count}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className={cn("h-full rounded-full", s.color)}
+                      style={{ width: `${(s.count / maxOrderCount) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Orders Overview */}
-        <div className="tc-card">
-          <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] mb-1">Orders Overview</h3>
-          <p className="text-xs text-muted-foreground mb-4">Order status distribution</p>
-          {state.orders.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-              No orders yet. Create orders to see analytics.
-            </div>
+        {/* Product stock levels */}
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="font-semibold text-sm mb-4">Product Stock Levels</h3>
+          {productStock.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No products yet</p>
           ) : (
             <div className="space-y-3">
-              {['Pending', 'Packed', 'Shipped'].map(status => {
-                const count = state.orders.filter(o => o.status === status).length;
-                const percentage = state.orders.length > 0 ? Math.round((count / state.orders.length) * 100) : 0;
-                return (
-                  <div key={status}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-muted-foreground">{status}</span>
-                      <span className="text-xs font-mono text-foreground">{count}</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
+              {productStock.map((p, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className={cn("truncate max-w-[180px]", p.isLow ? 'text-red-400' : 'text-muted-foreground')}>{p.name}</span>
+                    <span className="font-medium">{p.stock} units</span>
                   </div>
-                );
-              })}
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className={cn("h-full rounded-full", p.isLow ? 'bg-red-400' : 'bg-green-400')}
+                      style={{ width: `${Math.min(100, (p.stock / Math.max(p.stock, p.threshold)) * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Production summary */}
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="font-semibold text-sm mb-4">Production Summary</h3>
+          {(runs as any[]).length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No production runs yet</p>
+          ) : (
+            <div className="space-y-2">
+              {[
+                { label: 'Total Runs', value: (runs as any[]).length },
+                { label: 'Completed / Approved', value: approvedRuns.length },
+                { label: 'In Progress', value: (runs as any[]).filter((r: any) => r.status === 'in_progress').length },
+                { label: 'Planned', value: (runs as any[]).filter((r: any) => r.status === 'planned').length },
+                { label: 'Total Units Produced', value: totalUnits },
+              ].map((s, i) => (
+                <div key={i} className="flex justify-between py-1.5 border-b border-border last:border-0 text-sm">
+                  <span className="text-muted-foreground">{s.label}</span>
+                  <span className="font-semibold">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Alerts summary */}
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="font-semibold text-sm mb-4">Stock Alerts</h3>
+          {lowStock.length === 0 && lowInputs.length === 0 ? (
+            <div className="text-center py-6">
+              <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-2">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+              </div>
+              <p className="text-xs text-green-400 font-medium">All stock levels healthy</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {lowStock.map((p: any, i: number) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border last:border-0">
+                  <div className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.currentStock} {p.unit} remaining</p>
+                  </div>
+                </div>
+              ))}
+              {lowInputs.map((i: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 py-1.5 border-b border-border last:border-0">
+                  <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{i.name}</p>
+                    <p className="text-xs text-muted-foreground">{i.currentStock} {i.unit} remaining</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
-        {/* Stock Distribution */}
-        <div className="tc-card">
-          <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] mb-1">Current Stock Distribution</h3>
-          <p className="text-xs text-muted-foreground mb-4">Units on hand per product</p>
-          {productDistribution.length === 0 ? (
-            <div className="h-[180px] flex items-center justify-center text-muted-foreground text-sm">
-              No products yet. Add products to see distribution.
+      {/* Operation stats */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <h3 className="font-semibold text-sm mb-4">Operation Overview</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+          {[
+            { label: 'Suppliers', value: (suppliers as any[]).length },
+            { label: 'Raw Inputs', value: (inputs as any[]).length },
+            { label: 'Products', value: (products as any[]).length },
+            { label: 'Low Stock Items', value: lowStock.length + lowInputs.length },
+            { label: 'Total Orders', value: (orders as any[]).length },
+          ].map((s, i) => (
+            <div key={i} className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xl font-bold">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
             </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <ResponsiveContainer width="50%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={productDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {productDistribution.map((_, index) => (
-                      <Cell key={index} fill={PRODUCT_COLORS[index % PRODUCT_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip {...tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-2">
-                {productDistribution.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ background: PRODUCT_COLORS[i % PRODUCT_COLORS.length] }}
-                    />
-                    <span className="text-xs text-muted-foreground flex-1 truncate">{item.name}</span>
-                    <span className="text-xs font-mono text-foreground">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* AI Forecasting Placeholder */}
-        <div className="tc-card relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-violet-500/5" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">AI Demand Forecasting</h3>
-              <span className="tc-badge-info">
-                <Zap className="w-3 h-3" />
-                Coming Soon
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mb-4">
-              TraceCore AI will predict demand based on historical sales, seasonal trends, and supplier lead times.
-            </p>
-            <div className="space-y-3 opacity-60 pointer-events-none">
-              <div className="h-2 rounded-full bg-muted w-3/4" />
-              <div className="h-2 rounded-full bg-muted w-full" />
-              <div className="h-2 rounded-full bg-muted w-5/6" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

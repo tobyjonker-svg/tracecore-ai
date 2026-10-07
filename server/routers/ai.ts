@@ -1,232 +1,116 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
-import { invokeLLM } from "../_core/llm";
-import { transcribeAudio } from "../_core/voiceTranscription";
+import * as db from "../db";
+import { TRPCError } from "@trpc/server";
 
 export const aiRouter = router({
-  /**
-   * Chat with AI - send message and get response
-   */
   chat: protectedProcedure
-    .input(
-      z.object({
-        message: z.string().min(1),
-        conversationId: z.string().optional(),
-      })
-    )
+    .input(z.object({
+      message: z.string().min(1),
+      conversationHistory: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      })).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       try {
-        // Invoke LLM with user message
-        const response = await invokeLLM({
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are TraceCore AI, a helpful assistant for supply chain management. Help users manage their inventory, orders, products, and suppliers. Be concise and actionable.",
-            },
-            {
-              role: "user",
-              content: input.message,
-            },
-          ],
+        const workspace = await db.getWorkspaceByUserId(ctx.user.id);
+        if (!workspace) throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
+
+        const [products, orders, inputs, suppliers, runs] = await Promise.all([
+          db.getProductsByWorkspace(workspace.id),
+          db.getOrders(workspace.id),
+          db.getInputsByWorkspace(workspace.id),
+          db.getSuppliers(workspace.id),
+          db.getProductionRuns(workspace.id),
+        ]);
+
+        const totalRevenue = (orders as any[]).reduce((s: number, o: any) => s + parseFloat(o.totalPrice || 0), 0);
+        const pendingOrders = (orders as any[]).filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
+        const lowStock = (products as any[]).filter((p: any) => p.currentStock <= (p.lowStockThreshold || 10));
+        const activeRuns = (runs as any[]).filter((r: any) => r.status === 'in_progress' || r.status === 'planned').length;
+
+        const businessContext = [
+          "You are the AI business partner and voice command processor for " + workspace.name + " using TraceCore AI.",
+          "",
+          "LIVE BUSINESS DATA:",
+          "- Products: " + (products as any[]).length + " | Low stock: " + (lowStock.length > 0 ? lowStock.map((p: any) => p.name + " (" + p.currentStock + " " + p.unit + ")").join(", ") : "none"),
+          "- Orders: " + (orders as any[]).length + " | Pending/Processing: " + pendingOrders + " | Revenue: R" + totalRevenue.toFixed(2),
+          "- Raw Inputs: " + (inputs as any[]).length + " | Suppliers: " + (suppliers as any[]).length,
+          "- Production Runs: " + (runs as any[]).length + " | Active: " + activeRuns,
+          "",
+          "PRODUCTS: " + (products as any[]).map((p: any) => p.name + " (id:" + p.id + ", stock:" + p.currentStock + " " + p.unit + ", price:R" + p.sellingPrice + ")").join(" | "),
+          "SUPPLIERS: " + (suppliers as any[]).map((s: any) => s.name + " (id:" + s.id + ")").join(" | "),
+          "RAW INPUTS: " + (inputs as any[]).map((i: any) => i.name + " (id:" + i.id + ", stock:" + i.currentStock + " " + i.unit + ")").join(" | "),
+          "ORDERS: " + (orders as any[]).slice(0, 10).map((o: any) => "#" + o.orderNumber + " id:" + o.id + " " + o.customerName + " " + o.status).join(" | "),
+          "",
+          "You have TWO modes:",
+          "1. BUSINESS ANALYSIS: Answer questions about the business, give insights and advice.",
+          "2. ACTION COMMANDS: When the user asks you to DO something, return a JSON action block.",
+          "",
+          "For actions, respond with this exact format:",
+          '{"action": "ACTION_TYPE", "params": {...}, "confirm": "Human readable confirmation message"}',
+          "",
+          "Available actions:",
+          '- {"action": "UPDATE_ORDER_STATUS", "params": {"orderId": 123, "status": "shipped"}, "confirm": "Marked order #420 as shipped"}',
+          '- {"action": "ADD_INPUT_STOCK", "params": {"inputId": 123, "quantity": 500}, "confirm": "Added 500g to Lions Mane Powder"}',
+          '- {"action": "CREATE_PRODUCTION_RUN", "params": {"productId": 123, "quantity": 20, "notes": "..."}, "confirm": "Started production run for 20 bottles of Lions Mane"}',
+          '- {"action": "UPDATE_PRODUCT_STOCK", "params": {"productId": 123, "stock": 50}, "confirm": "Updated Lions Mane stock to 50 units"}',
+          "",
+          "If the user says something like 'mark all orders as shipped', return multiple actions as an array:",
+          '[{"action": "UPDATE_ORDER_STATUS", "params": {"orderId": 11, "status": "shipped"}, "confirm": "..."}, ...]',
+          "",
+          "For non-action questions, just respond normally as a business partner.",
+          "Be concise, direct, and helpful.",
+        ].join("\n");
+
+        const messages = [
+          ...(input.conversationHistory || []),
+          { role: "user" as const, content: input.message }
+        ];
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 1024,
+            system: businessContext,
+            messages,
+          }),
         });
 
-        const assistantMessage =
-          response.choices[0]?.message?.content || "No response";
+        const data = await response.json() as any;
+        if (!response.ok) throw new Error(data.error?.message || "AI request failed");
 
-        return {
-          success: true,
-          message: assistantMessage,
-          conversationId: input.conversationId || "default",
-        };
+        const assistantMessage = data.content?.[0]?.text || "No response";
+
+        // Check if response contains an action
+        let actions = null;
+        try {
+          const trimmed = assistantMessage.trim();
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            actions = JSON.parse(trimmed);
+            if (!Array.isArray(actions)) actions = [actions];
+          }
+        } catch(e) {}
+
+        return { success: true, message: assistantMessage, actions };
       } catch (error) {
         console.error("[AI Chat Error]", error);
-        return {
-          success: false,
-          message: "Failed to process your message. Please try again.",
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
+        return { success: false, message: "Failed to get AI response. Please try again." };
       }
     }),
 
-  /**
-   * Transcribe audio to text
-   */
+  getCommands: protectedProcedure.query(async () => ({ commands: [] })),
   transcribe: protectedProcedure
-    .input(
-      z.object({
-        audioUrl: z.string().url(),
-        language: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const result = await transcribeAudio({
-          audioUrl: input.audioUrl,
-          language: input.language,
-        });
-
-        if ("error" in result) {
-          return {
-            success: false,
-            error: result.error,
-          };
-        }
-
-        return {
-          success: true,
-          text: result.text,
-          language: result.language || "en",
-        };
-      } catch (error) {
-        console.error("[Transcription Error]", error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Transcription failed",
-        };
-      }
-    }),
-
-  /**
-   * Execute voice command with NLP parsing
-   */
+    .input(z.object({ audioUrl: z.string(), language: z.string().optional() }))
+    .mutation(async () => ({ success: false, error: "Use browser speech recognition" })),
   executeCommand: protectedProcedure
-    .input(
-      z.object({
-        command: z.string(),
-        parameters: z.record(z.string(), z.any()).optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      try {
-        const commandLower = input.command.toLowerCase();
-        const words = commandLower.split(/\s+/);
-
-        // Intent parsing with regex patterns
-        const intents: Record<string, RegExp> = {
-          add_product: /add|create.*product/,
-          create_order: /create|new.*order|order.*for/,
-          update_status: /update|mark.*status|mark.*as/,
-          check_inventory: /inventory|stock|check.*stock/,
-          sales_report: /sales|revenue|report/,
-          list_suppliers: /list|show.*supplier|suppliers/,
-          production_run: /production|start.*run|create.*run/,
-          shipment: /ship|shipment|track/,
-        };
-
-        let matchedIntent: string | null = null;
-        for (const [intent, pattern] of Object.entries(intents)) {
-          if (pattern.test(commandLower)) {
-            matchedIntent = intent;
-            break;
-          }
-        }
-
-        // Extract parameters from command
-        const parameters: Record<string, string> = {};
-        if (commandLower.includes("for")) {
-          const forIndex = words.indexOf("for");
-          if (forIndex !== -1) {
-            parameters.target = words.slice(forIndex + 1).join(" ");
-          }
-        }
-
-        // Command execution with context
-        const responses: Record<string, string> = {
-          add_product:
-            "Ready to add a new product. What is the product name and cost?",
-          create_order:
-            "Creating order. Who is the customer and what products do they need?",
-          update_status:
-            "Which item would you like to update and what status?",
-          check_inventory:
-            "Checking inventory levels across all products...",
-          sales_report:
-            "Generating sales analytics for the current period...",
-          list_suppliers:
-            "Retrieving supplier list with performance metrics...",
-          production_run:
-            "Starting production run. Which product and quantity?",
-          shipment: "Processing shipment. Which order and carrier?",
-        };
-
-        if (matchedIntent && responses[matchedIntent]) {
-          return {
-            success: true,
-            action: matchedIntent,
-            message: responses[matchedIntent],
-            parameters,
-          };
-        }
-
-        return {
-          success: false,
-          message: `I didn't understand that command. Try: "Add product", "Create order", "Update status", "Check inventory", "Show sales", or "List suppliers"`,
-        };
-      } catch (error) {
-        console.error("[Command Execution Error]", error);
-        return {
-          success: false,
-          message: "Failed to execute command. Please try again.",
-        };
-      }
-    }),
-
-  /**
-   * Get available commands
-   */
-  getCommands: protectedProcedure.query(async () => {
-    return {
-      commands: [
-        {
-          id: "add_product",
-          name: "Add Product",
-          description: "Add a new product to inventory",
-          examples: ["Add product", "Create product"],
-        },
-        {
-          id: "create_order",
-          name: "Create Order",
-          description: "Create a new customer order",
-          examples: ["Create order", "New order"],
-        },
-        {
-          id: "update_status",
-          name: "Update Status",
-          description: "Update order or shipment status",
-          examples: ["Update status", "Mark as shipped"],
-        },
-        {
-          id: "check_inventory",
-          name: "Check Inventory",
-          description: "View current inventory levels",
-          examples: ["Check inventory", "Show stock"],
-        },
-        {
-          id: "sales_report",
-          name: "Sales Report",
-          description: "Generate sales analytics",
-          examples: ["Show sales", "Revenue report"],
-        },
-        {
-          id: "list_suppliers",
-          name: "List Suppliers",
-          description: "View all suppliers",
-          examples: ["List suppliers", "Show suppliers"],
-        },
-        {
-          id: "production_run",
-          name: "Production Run",
-          description: "Start a production run",
-          examples: ["Start production", "New production run"],
-        },
-        {
-          id: "shipment",
-          name: "Shipment",
-          description: "Process shipment",
-          examples: ["Ship order", "Track shipment"],
-        },
-      ],
-    };
-  }),
+    .input(z.object({ command: z.string(), parameters: z.record(z.string(), z.any()).optional() }))
+    .mutation(async () => ({ success: false, message: "Use AI Chat instead" })),
 });

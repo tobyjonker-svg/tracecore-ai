@@ -16,12 +16,14 @@ import DashboardLayout from "./components/DashboardLayout";
 // Pages
 import Home from "./pages/Home";
 import Suppliers from "./pages/Suppliers";
-import { Inputs } from "./pages/Inputs";
+import Inputs from "./pages/Inputs";
 import Products from "./pages/Products";
 import { InventoryLog } from "./pages/InventoryLog";
-import { Batches } from "./pages/Batches";
-import { SupplierPerformance } from "./pages/SupplierPerformance";
+import Batches from "./pages/Batches";
+import SupplierPerformance from "./pages/SupplierPerformance";
 import { Alerts } from "./pages/Alerts";
+import Login from './pages/Login';
+import TrialExpired from './pages/TrialExpired';
 import { Dashboard } from "./pages/Dashboard";
 import { SettingsMVP } from "./pages/SettingsMVP";
 import { ReportsMVP } from "./pages/ReportsMVP";
@@ -50,6 +52,8 @@ import InventoryActivity from "./pages/InventoryActivity";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
+import Integrations from "./pages/Integrations";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminPaymentDashboard from "./pages/AdminPaymentDashboard";
 import WorkflowAnalytics from "./pages/WorkflowAnalytics";
 import ProfitMarginReport from "./pages/ProfitMarginReport";
@@ -89,6 +93,8 @@ function DashboardRouter() {
         <Route path="/import-export" component={ImportExportMVP} />
         <Route path="/app/security" component={SecurityMVP} />
         <Route path="/app/ai-chat" component={AIChat} />
+        <Route path="/app/integrations" component={Integrations} />
+        <Route path="/app/admin" component={AdminDashboard} />
         <Route path="/app/voice-commands" component={VoiceCommandCenter} />
         <Route path="/app/voice-analytics" component={VoiceAnalytics} />
         <Route path="/app/custom-commands" component={CustomVoiceCommands} />
@@ -122,6 +128,9 @@ function Router() {
     <Switch>
       <Route path="/pricing" component={Pricing} />
       <Route path="/payment" component={PaymentRoute} />
+      <Route path="/app/login" component={Login} />
+      <Route path="/app/trial-expired" component={TrialExpired} />
+      <Route path="/app/register" component={Login} />
       <Route component={DashboardRouter} />
       <Route path="/" component={Landing} />
     </Switch>

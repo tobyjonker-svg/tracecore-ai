@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import session from "express-session";
+import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerAdminLoginRoute } from "./admin-login";
@@ -34,10 +36,45 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Session middleware
+  app.set("trust proxy", 1);
+
+  // Rate limiting - prevent brute force
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 min per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // only 10 login attempts per 15 min
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many attempts. Please try again in 15 minutes." },
+  });
+  app.use("/api/trpc/auth.login", authLimiter);
+  app.use("/api/trpc/auth.register", authLimiter);
+  app.use("/api", limiter);
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "tracecore-secret-2026-xk9m",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    },
+  }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Admin login endpoint
   registerAdminLoginRoute(app);
+  // NERVE Bridge
+  const nerveBridgeModule = await import("../nerve-bridge.js");
+  app.use("/api/nerve", nerveBridgeModule.default);
   // tRPC API
   app.use(
     "/api/trpc",

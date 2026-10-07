@@ -1,261 +1,159 @@
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "../lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus, Pencil, Trash2, X, AlertTriangle, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2 } from "lucide-react";
 
-export function Inputs() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingInput, setEditingInput] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    costPerUnit: "",
-    unit: "kg",
-    supplierId: "",
-  });
+const emptyForm = { name: "", description: "", supplierId: 0, costPerUnit: 0, unit: "g" };
 
-  const { isAuthenticated, loading: authLoading } = useAuth();
+export default function Inputs() {
+  const utils = trpc.useUtils();
+  const { data: inputs = [], isLoading } = trpc.inputs.list.useQuery();
+  const { data: suppliers = [] } = trpc.suppliers.list.useQuery();
 
-  const { data: inputs, isLoading, error, refetch } = trpc.inputs.list.useQuery(undefined, {
-    enabled: isAuthenticated && !authLoading,
-  });
-  const createMutation = trpc.inputs.create.useMutation();
-  const updateMutation = trpc.inputs.update.useMutation();
-  const deleteMutation = trpc.inputs.delete.useMutation();
+  const createM = trpc.inputs.create.useMutation({ onSuccess: () => { utils.inputs.list.invalidate(); setShowForm(false); setForm(emptyForm); toast.success("Raw input added"); }, onError: (e) => toast.error(e.message) });
+  const updateM = trpc.inputs.update.useMutation({ onSuccess: () => { utils.inputs.list.invalidate(); setShowForm(false); setEditId(null); toast.success("Raw input updated"); }, onError: (e) => toast.error(e.message) });
+  const deleteM = trpc.inputs.delete.useMutation({ onSuccess: () => { utils.inputs.list.invalidate(); toast.success("Deleted"); }, onError: (e) => toast.error(e.message) });
+  const addStockM = trpc.production.addInputStock.useMutation({ onSuccess: () => { utils.inputs.list.invalidate(); setStockDialog(null); setStockQty(0); toast.success("Stock updated"); }, onError: (e) => toast.error(e.message) });
 
-  const handleOpenDialog = (input?: any) => {
-    if (input) {
-      setEditingInput(input);
-      setFormData({
-        name: input.name,
-        description: input.description || "",
-        costPerUnit: input.costPerUnit.toString(),
-        unit: input.unit,
-        supplierId: input.supplierId?.toString() || "",
-      });
-    } else {
-      setEditingInput(null);
-      setFormData({
-        name: "",
-        description: "",
-        costPerUnit: "",
-        unit: "kg",
-        supplierId: "",
-      });
-    }
-    setIsDialogOpen(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [stockDialog, setStockDialog] = useState<any>(null);
+  const [stockQty, setStockQty] = useState(0);
+
+  const reset = () => { setForm(emptyForm); setShowForm(false); setEditId(null); };
+  const submit = () => {
+    if (!form.name || form.costPerUnit <= 0) { toast.error("Name and cost required"); return; }
+    const d = { ...form, supplierId: form.supplierId || undefined };
+    if (editId) updateM.mutate({ id: editId, ...d });
+    else createM.mutate(d);
   };
+  const edit = (i: any) => { setForm({ name: i.name, description: i.description || "", supplierId: i.supplierId || 0, costPerUnit: Number(i.costPerUnit), unit: i.unit || "g" }); setEditId(i.id); setShowForm(true); };
+  const getSup = (id: number | null) => { if (!id) return "-"; const s = (suppliers as any[]).find((s: any) => s.id === id); return s ? s.name : "?"; };
 
-  const handleSave = async () => {
-    if (!formData.name || !formData.costPerUnit) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      if (editingInput) {
-        await updateMutation.mutateAsync({
-          id: editingInput.id,
-          name: formData.name,
-          description: formData.description,
-          costPerUnit: parseFloat(formData.costPerUnit),
-          unit: formData.unit,
-          supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
-        });
-        toast.success("Input updated successfully");
-      } else {
-        await createMutation.mutateAsync({
-          name: formData.name,
-          description: formData.description,
-          costPerUnit: parseFloat(formData.costPerUnit),
-          unit: formData.unit,
-          supplierId: formData.supplierId ? parseInt(formData.supplierId) : undefined,
-        });
-        toast.success("Input created successfully");
-      }
-      setIsDialogOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error("Failed to save input");
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this input?")) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        toast.success("Input deleted successfully");
-        refetch();
-      } catch (error) {
-        toast.error("Failed to delete input");
-      }
-    }
-  };
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Failed to Load Inputs</h2>
-          <p className="text-gray-600 mb-4">Failed to fetch inputs</p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Raw Materials (Inputs)</h1>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Add Input
-        </Button>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Raw Inputs</h1>
+        <Button onClick={() => { reset(); setShowForm(true); }}><Plus className="w-4 h-4 mr-2" />Add Raw Input</Button>
       </div>
 
-      {!inputs || inputs.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="text-gray-600 mb-4">No inputs added yet</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Start by adding your raw materials (powder, oils, capsules, etc.) that you purchase from suppliers
-          </p>
-          <Button onClick={() => handleOpenDialog()} variant="outline">
-            Add Your First Input
-          </Button>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {inputs.map((input: any) => (
-            <Card key={input.id} className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{input.name}</h3>
-                  {input.description && (
-                    <p className="text-sm text-gray-600 mt-1">{input.description}</p>
-                  )}
-                  <div className="flex gap-4 mt-3 text-sm">
-                    <div>
-                      <span className="text-gray-600">Cost per {input.unit}:</span>
-                      <p className="font-semibold">R{parseFloat(input.costPerUnit).toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Current Stock:</span>
-                      <p className="font-semibold">{input.currentStock} {input.unit}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenDialog(input)}
-                    className="gap-2"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(input.id)}
-                    className="gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingInput ? "Edit Input" : "Add New Input"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Input Name *</label>
-              <Input
-                placeholder="e.g., Powder, Oil, Capsules"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between">
+              <CardTitle>{editId ? "Edit" : "Add"} Raw Input</CardTitle>
+              <Button variant="ghost" size="icon" onClick={reset}><X className="w-4 h-4" /></Button>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <Input
-                placeholder="Optional description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Cost per Unit *</label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  value={formData.costPerUnit}
-                  onChange={(e) => setFormData({ ...formData, costPerUnit: e.target.value })}
-                />
+                <Label>Material Name *</Label>
+                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Lion's Mane Powder" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Unit Type</label>
-                <select
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                >
-                  <option value="kg">Kilogram (kg)</option>
-                  <option value="g">Gram (g)</option>
-                  <option value="liters">Liters (L)</option>
-                  <option value="ml">Milliliters (ml)</option>
+                <Label>Supplier</Label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.supplierId} onChange={e => setForm({ ...form, supplierId: Number(e.target.value) })}>
+                  <option value={0}>-- Select supplier --</option>
+                  {(suppliers as any[]).map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>Cost per Unit (ZAR) *</Label>
+                <Input type="number" step="0.01" min="0" value={form.costPerUnit || ""} onChange={e => setForm({ ...form, costPerUnit: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>Unit</Label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}>
+                  <option value="g">Grams (g)</option>
+                  <option value="kg">Kilograms (kg)</option>
+                  <option value="ml">Millilitres (ml)</option>
+                  <option value="l">Litres (l)</option>
                   <option value="units">Units</option>
                 </select>
               </div>
+              <div className="md:col-span-2">
+                <Label>Description</Label>
+                <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Optional notes about this material" />
+              </div>
             </div>
+            <div className="flex gap-2">
+              <Button onClick={submit} disabled={!form.name || form.costPerUnit <= 0}>{editId ? "Update" : "Add"}</Button>
+              <Button variant="outline" onClick={reset}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {inputs.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">No raw inputs yet. Add your first material above.</CardContent></Card>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-3 px-4">Material</th>
+                <th className="text-left py-3 px-4">Supplier</th>
+                <th className="text-right py-3 px-4">Stock</th>
+                <th className="text-right py-3 px-4">Cost/Unit</th>
+                <th className="text-right py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(inputs as any[]).map((i: any) => {
+                const st = Number(i.currentStock || 0);
+                const th = Number(i.lowStockThreshold || 10);
+                const low = st <= th;
+                return (
+                  <tr key={i.id} className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">
+                      <div className="font-medium">{i.name}</div>
+                      {i.description && <div className="text-xs text-muted-foreground">{i.description}</div>}
+                    </td>
+                    <td className="py-3 px-4">{getSup(i.supplierId)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <span className={low ? "text-red-500 font-semibold" : ""}>{st} {i.unit}</span>
+                      {low && <AlertTriangle className="w-3 h-3 inline ml-1 text-red-500" />}
+                    </td>
+                    <td className="py-3 px-4 text-right">R{Number(i.costPerUnit).toFixed(2)}/{i.unit}</td>
+                    <td className="py-3 px-4 text-right flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" title="Add stock" onClick={() => { setStockDialog(i); setStockQty(0); }}>
+                        <PackagePlus className="w-4 h-4 text-green-500" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => edit(i)}><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this input?")) deleteM.mutate({ id: i.id }); }}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add Stock Dialog */}
+      <Dialog open={stockDialog !== null} onOpenChange={() => setStockDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Add Stock — {stockDialog?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Current stock: <strong>{Number(stockDialog?.currentStock || 0)} {stockDialog?.unit}</strong></p>
             <div>
-              <label className="block text-sm font-medium mb-1">Supplier ID (Optional)</label>
-              <Input
-                type="number"
-                placeholder="Supplier ID"
-                value={formData.supplierId}
-                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-              />
-              <p className="text-xs text-gray-500 mt-1">Link to a supplier for tracking pricing</p>
+              <Label>Quantity to Add ({stockDialog?.unit})</Label>
+              <Input type="number" min="0" step="0.01" value={stockQty || ""} onChange={e => setStockQty(parseFloat(e.target.value) || 0)} placeholder="e.g. 500" />
             </div>
-            <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
-                {createMutation.isPending || updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save"
-                )}
-              </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setStockDialog(null)}>Cancel</Button>
+              <Button className="flex-1" disabled={stockQty <= 0} onClick={() => addStockM.mutate({ inputId: stockDialog.id, quantity: stockQty })}>Add Stock</Button>
             </div>
           </div>
         </DialogContent>

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
 import { BusinessType } from '@/lib/store';
-import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic, Mail } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Users, Bell, Shield, RefreshCw, ChevronRight, Zap, Plus, Edit2, Trash2, Check, X, Mic, Mail, ArrowLeft } from 'lucide-react';
 import AISetupWizard from '@/components/AISetupWizard';
 import { EmailTemplateCustomizer } from '@/components/EmailTemplateCustomizer';
 import { Button } from '@/components/ui/button';
@@ -40,11 +40,12 @@ const BUSINESS_TYPES: BusinessType[] = [
   'Other',
 ];
 
+export type TeamRole = 'Owner' | 'Manager' | 'Operator' | 'Partner';
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: 'Owner' | 'Manager' | 'Operator';
+  role: TeamRole;
 }
 
 export default function Settings() {
@@ -59,7 +60,7 @@ export default function Settings() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingEmail, setEditingEmail] = useState('');
-  const [editingRole, setEditingRole] = useState<'Owner' | 'Manager' | 'Operator'>('Operator');
+  const [editingRole, setEditingRole] = useState<'Owner' | 'Manager' | 'Operator' | 'Partner'>('Partner');
   const [showAddMember, setShowAddMember] = useState(false);
   
   // Workflow customization
@@ -111,7 +112,7 @@ export default function Settings() {
     setTeamMembers([...teamMembers, newMember]);
     setEditingName('');
     setEditingEmail('');
-    setEditingRole('Operator');
+    setEditingRole('Partner');
     setShowAddMember(false);
     toast.success('Team member added');
   };
@@ -136,7 +137,7 @@ export default function Settings() {
     setEditingMemberId(null);
     setEditingName('');
     setEditingEmail('');
-    setEditingRole('Operator');
+    setEditingRole('Partner');
     toast.success('Team member updated');
   };
 
@@ -162,7 +163,10 @@ export default function Settings() {
 
   return (
     <div className="p-6 space-y-6 page-enter max-w-4xl">
-      <div>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/app')} className="gap-2">
+          <ArrowLeft className="w-4 h-4" />Back
+        </Button>
         <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Settings</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Configure your workspace, business type, team, and workflow.
@@ -406,6 +410,7 @@ export default function Settings() {
                   <SelectItem value="Owner">Owner</SelectItem>
                   <SelectItem value="Manager">Manager</SelectItem>
                   <SelectItem value="Operator">Operator</SelectItem>
+                  <SelectItem value="Partner">Partner (View Only)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -425,7 +430,7 @@ export default function Settings() {
                   setShowAddMember(false);
                   setEditingName('');
                   setEditingEmail('');
-                  setEditingRole('Operator');
+                  setEditingRole('Partner');
                 }}
               >
                 <X className="w-4 h-4" />
@@ -501,7 +506,7 @@ export default function Settings() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
-                        member.role === 'Owner'
+                        member.role === 'Partner' ? 'bg-blue-500/10 text-blue-400' : member.role === 'Owner'
                           ? 'text-primary bg-primary/10 border-primary/20'
                           : member.role === 'Manager'
                           ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'

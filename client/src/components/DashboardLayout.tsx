@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useTheme } from '@/hooks/useTheme';
 import { getLoginUrl } from '@/const';
 import {
   LayoutDashboard,
@@ -36,7 +37,9 @@ import {
   Download,
   FileText,
   Smartphone,
-} from 'lucide-react';
+  Shield,
+  Sun,
+  Moon} from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { CommandCenter } from './CommandCenter';
@@ -55,23 +58,9 @@ const NAV_ITEMS = [
   { href: '/batches', label: 'Batch Management', icon: Package },
   { href: '/supplier-performance', label: 'Supplier Performance', icon: TrendingUp },
   { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/app/ai-chat', label: 'AI Chat', icon: Sparkles },
-  { href: '/app/voice-commands', label: 'Voice Commands', icon: Mic },
-  { href: '/app/voice-analytics', label: 'Voice Analytics', icon: TrendingUp },
-  { href: '/app/custom-commands', label: 'Custom Commands', icon: Sparkles },
-  { href: '/app/command-scheduling', label: 'Scheduling', icon: Clock },
-  { href: '/app/realtime-execution', label: 'Real-Time Execution', icon: Zap },
-  { href: '/app/command-permissions', label: 'Permissions', icon: Lock },
-  { href: '/app/command-templates', label: 'Templates', icon: Download },
-  { href: '/app/audit-log', label: 'Audit Log', icon: FileText },
-  { href: '/app/command-chaining', label: 'Chaining', icon: Zap },
-  { href: '/app/mobile-voice', label: 'Mobile Voice', icon: Smartphone },
-  { href: '/app/realtime-notifications', label: 'Notifications', icon: Bell },
-  { href: '/app/predictive-analytics', label: 'Analytics', icon: TrendingUp },
-  { href: '/app/integration-hub', label: 'Integrations', icon: Zap },
+  { href: '/app/integrations', label: 'Integrations', icon: Zap },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/profit-margin', label: 'Profit Margin', icon: TrendingUp },
-  { href: '/users', label: 'Users', icon: Users },
+  { href: '/app/ai-chat', label: 'AI Business Partner', icon: Sparkles },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -80,9 +69,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useTheme();
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { state, dispatch } = useApp();
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth({ redirectOnUnauthenticated: true, redirectPath: '/app/login' });
   
   // Fetch unread alerts only when authenticated
   const { data: unreadAlerts = [] } = trpc.alerts.getUnread.useQuery(undefined, {
@@ -125,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (loading || isAuthenticated) return;
     console.log('[Auth] Not authenticated, redirecting to login');
     const origin = window.location.origin;
-    window.location.href = `/api/oauth/login?origin=${encodeURIComponent(origin)}`;
+    window.location.href = '/app/login';
   }, [loading, isAuthenticated]);
 
   if (loading) {
@@ -232,20 +222,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
 
-        {/* AI Assistant Link */}
+        {/* AI Business Partner Link */}
         <div className="px-3 py-3 border-t border-border">
           <Link
-            href="/ai-assistant"
+            href="/app/ai-chat"
             onClick={closeSidebar}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              location === '/ai-assistant'
+              location === '/app/ai-chat'
                 ? 'bg-primary/15 text-primary'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             )}
           >
             <Sparkles className="w-5 h-5 shrink-0" />
-            <span className="truncate">AI Assistant</span>
+            <span className="truncate">AI Business Partner</span>
           </Link>
         </div>
 
@@ -380,15 +370,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </PopoverContent>
             </Popover>
 
-            {/* Command Center Button */}
-            <button
-              onClick={() => setCommandCenterOpen(!commandCenterOpen)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Command Center (Ctrl+K)"
-            >
-              <Zap className="w-5 h-5 text-muted-foreground" />
-            </button>
 
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark'
+                ? <Sun className="w-4 h-4 text-muted-foreground" />
+                : <Moon className="w-4 h-4 text-muted-foreground" />
+              }
+            </button>
+            {/* Admin Toggle */}
+            {user?.role === 'admin' && (
+              <a href={location.startsWith('/app/admin') ? '/app' : '/app/admin'}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-border hover:border-red-500/30 hover:text-red-400"
+                title={location.startsWith('/app/admin') ? 'Switch to Workspace' : 'Switch to Admin'}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                {location.startsWith('/app/admin') ? 'Workspace' : 'Admin'}
+              </a>
+            )}
             {/* User Menu */}
             <div className="flex items-center gap-2 pl-3 border-l border-border">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
@@ -411,10 +415,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      {/* Command Center Modal */}
-      {commandCenterOpen && (
-        <CommandCenter isOpen={commandCenterOpen} onClose={() => setCommandCenterOpen(false)} />
-      )}
+
     </div>
   );
 }

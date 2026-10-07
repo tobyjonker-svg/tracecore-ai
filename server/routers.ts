@@ -1,5 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
+import { authRouter } from './routers/auth';
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { billingRouter } from "./routers/billing";
@@ -17,21 +16,14 @@ import { shipmentsRouter } from "./routers/shipments";
 import { aiRouter } from "./routers/ai";
 import { profileRouter } from "./routers/profile";
 import { woocommerceRouter } from "./routers/woocommerce";
+import { integrationsRouter } from "./routers/integrations";
+import { adminRouter } from "./routers/admin";
 import { trackingRouter } from "./routers/tracking";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
-  auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
-    }),
-  }),
+  auth: authRouter,
   billing: billingRouter,
   payment: paymentRouter,
   workflow: workflowRouter,
@@ -47,6 +39,8 @@ export const appRouter = router({
   ai: aiRouter,
   profile: profileRouter,
   woocommerce: woocommerceRouter,
+  integrations: integrationsRouter,
+  admin: adminRouter,
   tracking: trackingRouter,
 });
 

@@ -1,41 +1,22 @@
 import { Express, Request, Response } from "express";
-import { SignJWT } from "jose";
-import { getSessionCookieOptions } from "./cookies";
-import { ENV } from "./env";
+import * as db from "../db";
 
-const JWT_SECRET = new TextEncoder().encode(ENV.cookieSecret);
+const ADMIN_KEY = process.env.ADMIN_LOGIN_KEY || "tcai-admin-2026-secure";
 
 export function registerAdminLoginRoute(app: Express) {
   app.get("/api/admin-login", async (req: Request, res: Response) => {
     try {
-      // Create JWT token for admin user
-      const token = await new SignJWT({
-        userId: "admin",
-        email: "admin@tracecoreai.com",
-        role: "admin",
-      })
-        .setProtectedHeader({ alg: "HS256" })
-        .setIssuedAt()
-        .setExpirationTime("7d")
-        .sign(JWT_SECRET);
-
-      // Get cookie options (mobile-friendly)
-      const cookieOptions = getSessionCookieOptions(req, false);
-
-      // Set session cookie with the JWT token
-      res.cookie("session", token, {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      // Log successful admin login
-      console.log("[Admin Login] Session cookie set for admin user");
-
-      // Redirect to dashboard
+      const key = req.query.key as string;
+      if (!key || key !== ADMIN_KEY) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
+      const user = await db.getUserByEmail("toby@tracecoreai.co.za");
+      if (!user) { res.status(404).json({ error: "Not found" }); return; }
+      (req as any).session.userId = user.id;
       res.redirect("/app");
     } catch (error) {
-      console.error("[Admin Login] Error:", error);
-      res.status(500).json({ error: "Failed to create admin session" });
+      res.status(500).json({ error: "Failed" });
     }
   });
 }

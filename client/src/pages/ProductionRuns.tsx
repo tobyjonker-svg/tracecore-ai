@@ -1,253 +1,235 @@
-/**
- * TraceCore AI — Production Runs Page
- * Design: Soft-Dark Enterprise
- * - Log production runs → auto-increments product stock
- */
+import React, { useState } from "react";
+import { trpc } from "../lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus, X, CheckCircle, Clock, Play, Trash2, FlaskConical } from "lucide-react";
+import { toast } from "sonner";
 
-import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { formatDateTime } from '@/lib/store';
-import { Factory, Plus, Package, FileText, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+const emptyForm = { productId: 0, quantity: 0, notes: "" };
 
 export default function ProductionRuns() {
-  const { state, dispatch } = useApp();
-  const [productId, setProductId] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const utils = trpc.useUtils();
+  const { data: runs = [], isLoading } = trpc.production.list.useQuery();
+  const { data: products = [] } = trpc.products.list.useQuery();
+  const { data: inputs = [] } = trpc.inputs.list.useQuery();
 
-  const handleDelete = (id: string) => {
-    dispatch({ type: 'DELETE_PRODUCTION_RUN', payload: id });
-    toast.success('Production run deleted');
+  const matsRef = React.useRef<{ inputId: number; quantity: number }[]>([]);
+
+  const createM = trpc.production.create.useMutation({
+    onSuccess: async (run: any) => {
+      const runId = run?.id || run?.insertId || (run as any)[0]?.id;
+      const capturedMats = matsRef.current;
+      console.log("[ProductionRuns] Created run id:", runId, "capturedMats:", capturedMats.length);
+      if (capturedMats.length > 0 && runId) {
+        try {
+          await saveRunInputsM.mutateAsync({
+            productionRunId: runId,
+            materials: capturedMats.map(m => ({
+              inputId: m.inputId,
+              quantityUsed: m.quantity,
+              unit: (inputs as any[]).find((i: any) => i.id === m.inputId)?.unit || "g",
+            })),
+          });
+          console.log("[ProductionRuns] Saved", capturedMats.length, "materials");
+        } catch(e) {
+          console.error("[ProductionRuns] Failed to save materials:", e);
+        }
+      }
+      matsRef.current = [];
+      utils.production.list.invalidate();
+      utils.inputs.list.invalidate();
+      setShowForm(false);
+      setForm(emptyForm);
+      setMats([]);
+      toast.success("Production run started");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const saveRunInputsM = trpc.production.saveRunInputs.useMutation();
+  const updateStatusM = trpc.production.updateStatus.useMutation({
+    onSuccess: () => { utils.production.list.invalidate(); utils.products.list.invalidate(); toast.success("Status updated"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteM = trpc.production.delete.useMutation({
+    onSuccess: () => { utils.production.list.invalidate(); toast.success("Deleted"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [mats, setMats] = useState<{ inputId: number; quantity: number }[]>([]);
+  const [pendingMats, setPendingMats] = useState<{ inputId: number; quantity: number }[]>([]);
+  const [viewRunId, setViewRunId] = useState<number | null>(null);
+
+  const { data: viewRunMats = [] } = trpc.production.getRunInputs.useQuery(
+    { productionRunId: viewRunId! },
+    { enabled: viewRunId !== null }
+  );
+
+  const reset = () => { setForm(emptyForm); setMats([]); setShowForm(false); };
+  const addMat = () => setMats([...mats, { inputId: 0, quantity: 0 }]);
+  const rmMat = (i: number) => setMats(mats.filter((_, idx) => idx !== i));
+  const upMat = (i: number, k: string, v: any) => { const m = [...mats]; (m[i] as any)[k] = v; setMats(m); };
+
+  const submit = () => {
+    if (!form.productId || form.quantity <= 0) { toast.error("Select a product and quantity"); return; }
+    const runNumber = `RUN-${Date.now().toString().slice(-6)}`;
+    // Capture mats snapshot BEFORE mutation clears state
+    matsRef.current = mats.filter(m => m.inputId > 0 && m.quantity > 0);
+    console.log("[ProductionRuns] Captured", matsRef.current.length, "mats before submit");
+    createM.mutate({
+      runNumber,
+      productId: form.productId,
+      quantity: form.quantity,
+      notes: form.notes,
+      startDate: new Date(),
+      materials: matsRef.current.map(m => ({
+        inputId: m.inputId,
+        quantityUsed: m.quantity,
+        unit: (inputs as any[]).find((i: any) => i.id === m.inputId)?.unit || "g",
+      })),
+    });
   };
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productId) { toast.error('Please select a product'); return; }
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty <= 0) { toast.error('Enter a valid quantity greater than 0'); return; }
+  const getProd = (id: number) => { const p = (products as any[]).find((p: any) => p.id === id); return p ? p.name : "?"; };
+  const sIcon = (s: string) => s === "completed" || s === "approved" ? <CheckCircle className="w-4 h-4 text-green-600" /> : s === "in_progress" ? <Play className="w-4 h-4 text-blue-600" /> : <Clock className="w-4 h-4 text-yellow-600" />;
+  const sLabel = (s: string) => ({ completed: "Completed", approved: "Approved", in_progress: "In Progress", planned: "Planned", quality_check: "QC Check" }[s] || s);
+  const sColor = (s: string) => ({ completed: "bg-green-100 text-green-700", approved: "bg-emerald-100 text-emerald-700", in_progress: "bg-blue-100 text-blue-700", planned: "bg-yellow-100 text-yellow-700", quality_check: "bg-purple-100 text-purple-700" }[s] || "bg-muted");
 
-    setIsSubmitting(true);
-    const product = state.products.find(p => p.id === productId);
-    setTimeout(() => {
-      dispatch({
-        type: 'ADD_PRODUCTION_RUN',
-        payload: { productId, quantity: qty, notes: notes.trim() },
-      });
-      setProductId(''); setQuantity(''); setNotes('');
-      setIsSubmitting(false);
-      toast.success(
-        `Production run logged: +${qty} ${product?.name ?? 'units'}. Stock updated automatically.`
-      );
-    }, 500);
-  };
-
-  const totalUnitsThisWeek = state.productionRuns
-    .filter(r => {
-      const d = new Date(r.createdAt);
-      const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return d >= weekAgo;
-    })
-    .reduce((sum, r) => sum + r.quantity, 0);
+  if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 page-enter">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground font-['Plus_Jakarta_Sans']">Production Runs</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Log manufacturing output. Product stock updates automatically.
-        </p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Production Runs</h1>
+        <Button onClick={() => { reset(); setShowForm(true); }}><Plus className="w-4 h-4 mr-2" />New Run</Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Log Run Form */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="tc-card">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-violet-400" />
-              </div>
-              <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">Log Production Run</h2>
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between">
+              <CardTitle>Log Production Run</CardTitle>
+              <Button variant="ghost" size="icon" onClick={reset}><X className="w-4 h-4" /></Button>
             </div>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Product *</Label>
-                <Select value={productId} onValueChange={setProductId}>
-                  <SelectTrigger className="bg-muted/50 border-border">
-                    <SelectValue placeholder="Select product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {state.products.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="flex items-center gap-2">
-                          {p.name}
-                          <span className="text-xs text-muted-foreground">({p.stockOnHand} in stock)</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>Product *</Label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.productId} onChange={e => setForm({ ...form, productId: Number(e.target.value) })}>
+                  <option value={0}>-- Select product --</option>
+                  {(products as any[]).map((p: any) => <option key={p.id} value={p.id}>{p.name} {p.sku ? `(${p.sku})` : ""}</option>)}
+                </select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Quantity Produced *</Label>
-                <Input
-                  type="number"
-                  value={quantity}
-                  onChange={e => setQuantity(e.target.value)}
-                  placeholder="e.g. 20"
-                  min="1"
-                  className="bg-muted/50 border-border focus:border-primary/50"
-                />
+              <div>
+                <Label>Quantity (bottles) *</Label>
+                <Input type="number" min="1" value={form.quantity || ""} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
-                <Textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Batch number, extraction notes, etc."
-                  className="bg-muted/50 border-border focus:border-primary/50 resize-none"
-                  rows={3}
-                />
+              <div className="md:col-span-2">
+                <Label>Notes</Label>
+                <Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Batch notes, observations..." />
               </div>
+            </div>
 
-              {/* Preview */}
-              {productId && quantity && parseInt(quantity) > 0 && (
-                <div className="p-3 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
-                  <p className="text-xs text-emerald-400">
-                    <span className="font-semibold">Stock impact:</span>{' '}
-                    {state.products.find(p => p.id === productId)?.name} will increase by{' '}
-                    <span className="font-bold">+{quantity} units</span>
-                  </p>
+            {/* Materials Used */}
+            <div className="space-y-2 border-t pt-3">
+              <div className="flex justify-between items-center">
+                <Label className="font-semibold">Raw Materials Used</Label>
+                <Button variant="outline" size="sm" onClick={addMat}><Plus className="w-3 h-3 mr-1" />Add Material</Button>
+              </div>
+              {mats.length === 0 && <p className="text-xs text-muted-foreground">Track which raw inputs were used in this run.</p>}
+              {mats.map((m, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <select className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={m.inputId} onChange={e => upMat(idx, "inputId", Number(e.target.value))}>
+                    <option value={0}>-- Select material --</option>
+                    {(inputs as any[]).map((i: any) => <option key={i.id} value={i.id}>{i.name} (stock: {Number(i.currentStock || 0)} {i.unit})</option>)}
+                  </select>
+                  <Input className="w-28" type="number" min="0" step="0.1" placeholder="Qty" value={m.quantity || ""} onChange={e => upMat(idx, "quantity", parseFloat(e.target.value) || 0)} />
+                  <span className="text-xs text-muted-foreground w-8">{m.inputId ? (inputs as any[]).find((i: any) => i.id === m.inputId)?.unit : ""}</span>
+                  <Button variant="ghost" size="icon" onClick={() => rmMat(idx)}><X className="w-4 h-4 text-red-500" /></Button>
                 </div>
-              )}
+              ))}
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Logging...' : 'Log Production Run'}
+            <div className="flex gap-2 pt-2">
+              <Button onClick={submit} disabled={!form.productId || form.quantity <= 0 || createM.isPending}>
+                {createM.isPending ? "Saving..." : "Start Run"}
               </Button>
-            </form>
-          </div>
-
-          {/* Stats */}
-          <div className="tc-card">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">This Week</p>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total runs</span>
-                <span className="text-lg font-bold text-foreground font-['Plus_Jakarta_Sans']">
-                  {state.productionRuns.filter(r => {
-                    const d = new Date(r.createdAt);
-                    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                    return d >= weekAgo;
-                  }).length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Units produced</span>
-                <span className="text-lg font-bold text-foreground font-['Plus_Jakarta_Sans']">
-                  {totalUnitsThisWeek}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">All-time runs</span>
-                <span className="text-lg font-bold text-foreground font-['Plus_Jakarta_Sans']">
-                  {state.productionRuns.length}
-                </span>
-              </div>
+              <Button variant="outline" onClick={reset}>Cancel</Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Production Runs List */}
-        <div className="lg:col-span-2 space-y-3">
-          <h2 className="font-semibold text-foreground font-['Plus_Jakarta_Sans'] text-sm uppercase tracking-wide text-muted-foreground">
-            Recent Production Runs
-          </h2>
-          {state.productionRuns.length === 0 ? (
-            <div className="tc-card text-center py-12">
-              <Factory className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No production runs yet. Log your first batch!</p>
-            </div>
-          ) : (
-            state.productionRuns.map((run, i) => {
-              const product = state.products.find(p => p.id === run.productId);
-              return (
-                <div
-                  key={run.id}
-                  className="tc-card-hover card-enter"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center shrink-0">
-                      <Factory className="w-5 h-5 text-violet-400" />
+      {runs.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground"><FlaskConical className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No production runs yet.</p></CardContent></Card>
+      ) : (
+        <div className="grid gap-4">
+          {(runs as any[]).map((r: any) => (
+            <Card key={r.id}>
+              <CardContent className="py-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      {sIcon(r.status)}
+                      <h3 className="font-semibold">{getProd(r.productId)}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sColor(r.status)}`}>{sLabel(r.status)}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground font-['Plus_Jakarta_Sans']">
-                            {product?.name ?? 'Unknown Product'}
-                          </h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatDateTime(run.createdAt)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="tc-badge-success">
-                            <Package className="w-3 h-3" />
-                            +{run.quantity} units
-                          </span>
-                        </div>
+                    <p className="text-sm text-muted-foreground">Qty: <strong>{r.quantity}</strong> bottles &nbsp;·&nbsp; Run: {r.runNumber}</p>
+                    {r.notes && <p className="text-xs text-muted-foreground">{r.notes}</p>}
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs text-blue-400" onClick={() => setViewRunId(viewRunId === r.id ? null : r.id)}>
+                      {viewRunId === r.id ? "Hide materials" : "View materials used"}
+                    </Button>
+                    {viewRunId === r.id && (
+                      <div className="mt-2 space-y-1">
+                        {(viewRunMats as any[]).length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No materials recorded for this run.</p>
+                        ) : (
+                          (viewRunMats as any[]).map((m: any) => (
+                            <p key={m.id} className="text-xs bg-muted/50 rounded px-2 py-1">
+                              {m.inputName}: <strong>{m.quantityUsed} {m.inputUnit}</strong>
+                            </p>
+                          ))
+                        )}
                       </div>
-                      {run.notes && (
-                        <div className="mt-2 flex items-start gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                          <p className="text-xs text-muted-foreground leading-relaxed">{run.notes}</p>
-                        </div>
-                      )}
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            Current stock:{' '}
-                            <span className="font-mono text-foreground font-medium">
-                              {product?.stockOnHand ?? 0} units
-                            </span>
-                          </span>
-                          <span className="text-xs font-mono text-muted-foreground">
-                            #{run.id.slice(-6).toUpperCase()}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleDelete(run.id)}
-                          className="p-1.5 hover:bg-red-500/10 rounded transition-colors"
-                          title="Delete production run"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
-                        </button>
-                      </div>
-                    </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {r.status === "planned" && (
+                      <Button variant="outline" size="sm" onClick={() => updateStatusM.mutate({ id: r.id, status: "in_progress" })}>
+                        <Play className="w-3 h-3 mr-1" />Start
+                      </Button>
+                    )}
+                    {r.status === "in_progress" && (
+                      <Button variant="outline" size="sm" onClick={() => updateStatusM.mutate({ id: r.id, status: "quality_check" })}>
+                        QC Check
+                      </Button>
+                    )}
+                    {r.status === "quality_check" && (
+                      <Button variant="outline" size="sm" onClick={() => updateStatusM.mutate({ id: r.id, status: "completed" })}>
+                        <CheckCircle className="w-3 h-3 mr-1" />Complete
+                      </Button>
+                    )}
+                    {(r.status === "completed" || r.status === "in_progress") && (
+                      <Button variant="outline" size="sm" onClick={() => updateStatusM.mutate({ id: r.id, status: "approved" })}>
+                        Approve
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this run?")) deleteM.mutate({ id: r.id }); }}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
                   </div>
                 </div>
-              );
-            })
-          )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
